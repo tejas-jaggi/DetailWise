@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block title %}Services{% endblock %}
+{% block content %}
+<section class="hero">
+  <p class="eyebrow">Car detailing · Urbana, IL</p>
+  <h1>Choose a service, pick a time, and we will have it on the books.</h1>
+  <p class="hero__lead">Book online in under a minute. All appointment times are Central Time.</p>
+</section>
+
+<section aria-labelledby="services-title">
+  <h2 id="services-title" class="section-title">Services</h2>
+  {% if services %}
+    <ul class="service-grid" role="list">
+      {% for service in services %}
+        <li class="service-card service-card--{{ service.weather_sensitivity }}">
+          <div class="service-card__body">
+            <p class="tag">
+              {% if service.weather_sensitivity == "exterior" %}Exterior work{% elif service.weather_sensitivity == "interior" %}Interior work{% else %}Exterior + interior{% endif %}
+            </p>
+            <h3 class="service-card__name">{{ service.name }}</h3>
+            <p class="service-card__desc">{{ service.description }}</p>
+          </div>
+          <div class="service-card__footer">
+            <p class="price"><span class="visually-hidden">Price: </span>${{ service.price|floatformat:"-2" }}</p>
+            {% if user.is_staff %}
+              <span class="muted">Staff accounts do not book</span>
+            {% else %}
+              <a class="btn btn--primary" href="{% url 'bookings:create' %}?service={{ service.slug }}">
+                Book<span class="visually-hidden"> {{ service.name }}</span>
+              </a>
+            {% endif %}
+          </div>
+        </li>
+      {% endfor %}
+    </ul>
+  {% else %}
+    <div class="panel empty-state"><p>No services are available right now.</p></div>
+  {% endif %}
+</section>
+
+<p class="scope-note">
+  Prices are listed prices. Saving a booking records your request; it does not confirm shop capacity.
+</p>
+{% endblock %}

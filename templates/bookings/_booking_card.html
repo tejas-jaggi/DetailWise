@@ -1,0 +1,23 @@
+<li class="booking-card{% if booking.status == 'cancelled' %} booking-card--cancelled{% endif %}">
+  <div class="booking-card__main">
+    <p class="booking-card__ref">#{{ booking.reference }}</p>
+    <h3 class="booking-card__service">
+      <a href="{% url 'bookings:detail' booking.pk %}">{{ booking.service.name }}</a>
+    </h3>
+    <p class="booking-card__when">
+      <time datetime="{{ booking.date|date:'Y-m-d' }}T{{ booking.time|time:'H:i' }}">
+        {{ booking.date|date:"D, M j, Y" }} · {{ booking.time|time:"g:i A" }} CT
+      </time>
+    </p>
+  </div>
+  <div class="booking-card__meta">
+    {% if booking.status == "cancelled" %}
+      <span class="badge badge--cancelled">Cancelled</span>
+    {% elif booking.is_past %}
+      <span class="badge badge--past">Past</span>
+    {% else %}
+      <span class="badge badge--saved">Saved</span>
+    {% endif %}
+    <span class="booking-card__price">Est. ${{ booking.price_at_booking|floatformat:"-2" }}</span>
+  </div>
+</li>

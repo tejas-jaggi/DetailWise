@@ -1,0 +1,59 @@
+/*
+ * DetailWise design tokens: PROVISIONAL THEME (not yet approved by the team).
+ *
+ * Layout and usability follow Bochen's original prototype; the cyan/magenta
+ * accents are borrowed, in moderation, from the Lucy Moon variant.
+ * Change the look by editing values here only. base.css and components.css
+ * must reference these variables, never raw colors.
+ */
+:root {
+  color-scheme: dark;
+
+  /* Surfaces */
+  --color-bg: #0a0e17;
+  --color-surface: #121826;
+  --color-surface-raised: #182033;
+  --color-border: #28324a;
+  --color-border-strong: #3a4766;
+
+  /* Text */
+  --color-text: #e9edf5;
+  --color-text-muted: #a6b0c4;
+
+  /* Accents */
+  --color-accent: #22d3ee;          /* primary actions (cyan) */
+  --color-accent-hover: #67e8f9;
+  --color-on-accent: #041318;
+  --color-highlight: #ff3d8b;       /* framing, focus, emphasis (magenta) */
+
+  /* Status */
+  --color-success: #4ade80;
+  --color-success-bg: #10291b;
+  --color-danger: #ff8a93;
+  --color-danger-bg: #2e1419;
+  --color-info-bg: #0f2430;
+  --color-muted-bg: #1d2436;
+
+  /* Type: system font stacks (no embedded or downloaded fonts) */
+  --font-sans: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-mono: ui-monospace, "Cascadia Mono", "SFMono-Regular", Consolas, monospace;
+  --text-sm: 0.875rem;
+  --text-base: 1rem;
+  --text-lg: 1.125rem;
+  --text-xl: 1.5rem;
+  --text-2xl: clamp(1.75rem, 1.2rem + 2.2vw, 2.6rem);
+
+  /* Spacing, shape, depth */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.5rem;
+  --space-6: 2rem;
+  --space-7: 3rem;
+  --radius: 4px;
+  --radius-lg: 8px;
+  --shadow: 0 1px 2px rgb(0 0 0 / 0.4), 0 8px 24px rgb(0 0 0 / 0.25);
+  --focus-ring: 0 0 0 3px var(--color-bg), 0 0 0 5px var(--color-highlight);
+  --container: 72rem;
+}

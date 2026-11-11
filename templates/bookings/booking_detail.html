@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}Booking {{ booking.reference }}{% endblock %}
+{% block content %}
+<section class="page-heading">
+  <p class="eyebrow">Booking #{{ booking.reference }}</p>
+  <h1>{{ booking.service.name }}</h1>
+</section>
+
+<div class="panel">
+  <dl class="detail-list">
+    <div><dt>Status</dt><dd>{% if booking.status == "cancelled" %}Cancelled{% elif booking.is_past %}Past{% else %}Saved{% endif %}</dd></div>
+    <div><dt>Date</dt><dd>{{ booking.date|date:"l, F j, Y" }}</dd></div>
+    <div><dt>Time</dt><dd>{{ booking.time|time:"g:i A" }} Central Time</dd></div>
+    <div><dt>Estimated value</dt><dd>${{ booking.price_at_booking|floatformat:"2" }} <span class="muted">(listed price when booked)</span></dd></div>
+    <div><dt>Saved on</dt><dd>{{ booking.created_at|date:"M j, Y, g:i A" }} CT</dd></div>
+  </dl>
+  <div class="form-actions">
+    <a class="btn btn--ghost" href="{% url 'bookings:my_bookings' %}">Back to My Bookings</a>
+  </div>
+</div>
+
+<p class="scope-note">"Saved" means your booking request is recorded. It does not confirm shop capacity.</p>
+{% endblock %}

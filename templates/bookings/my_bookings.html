@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block title %}My Bookings{% endblock %}
+{% block content %}
+<section class="page-heading page-heading--split">
+  <div>
+    <h1>My Bookings</h1>
+    <p>Only you can see these bookings. Times are Central Time.</p>
+  </div>
+  <a class="btn btn--primary" href="{% url 'bookings:catalog' %}">Book a service</a>
+</section>
+
+{% if not has_bookings %}
+  <div class="panel empty-state">
+    <h2>No bookings yet</h2>
+    <p>Choose a service to make your first booking.</p>
+    <a class="btn btn--primary" href="{% url 'bookings:catalog' %}">Browse services</a>
+  </div>
+{% else %}
+  <section aria-labelledby="upcoming-title" class="booking-section">
+    <h2 id="upcoming-title" class="section-title">Upcoming</h2>
+    {% if upcoming %}
+      <ul class="booking-list" role="list">
+        {% for booking in upcoming %}{% include "bookings/_booking_card.html" %}{% endfor %}
+      </ul>
+    {% else %}
+      <p class="muted">No upcoming bookings.</p>
+    {% endif %}
+  </section>
+
+  {% if history %}
+    <section aria-labelledby="history-title" class="booking-section">
+      <h2 id="history-title" class="section-title">Past and cancelled</h2>
+      <ul class="booking-list" role="list">
+        {% for booking in history %}{% include "bookings/_booking_card.html" %}{% endfor %}
+      </ul>
+    </section>
+  {% endif %}
+{% endif %}
+{% endblock %}

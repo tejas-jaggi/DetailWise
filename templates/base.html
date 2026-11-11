@@ -1,0 +1,59 @@
+{% load static %}<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}DetailWise{% endblock %} · DetailWise</title>
+  <link rel="stylesheet" href="{% static 'css/tokens.css' %}">
+  <link rel="stylesheet" href="{% static 'css/base.css' %}">
+  <link rel="stylesheet" href="{% static 'css/components.css' %}">
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to main content</a>
+  <div class="container">
+    <header class="site-header">
+      <a class="brand" href="{% url 'bookings:catalog' %}" aria-label="DetailWise home">
+        <span class="brand__mark" aria-hidden="true">DW</span>
+        <span class="brand__name">DetailWise</span>
+      </a>
+      <nav class="site-nav" aria-label="Main">
+        {% url 'bookings:catalog' as catalog_url %}
+        {% url 'bookings:my_bookings' as my_bookings_url %}
+        {% url 'accounts:login' as login_url %}
+        {% url 'accounts:register' as register_url %}
+        <a href="{{ catalog_url }}"{% if request.path == catalog_url %} aria-current="page"{% endif %}>Services</a>
+        {% if user.is_authenticated %}
+          {% if user.is_staff %}
+            <a href="{% url 'admin:index' %}">Admin</a>
+          {% else %}
+            <a href="{{ my_bookings_url }}"{% if request.path == my_bookings_url %} aria-current="page"{% endif %}>My Bookings</a>
+          {% endif %}
+          <form class="site-nav__signout" method="post" action="{% url 'accounts:logout' %}">
+            {% csrf_token %}
+            <button type="submit" class="link-button">Sign out <span class="visually-hidden">({{ user.get_username }})</span></button>
+          </form>
+        {% else %}
+          <a href="{{ login_url }}"{% if request.path == login_url %} aria-current="page"{% endif %}>Sign In</a>
+          <a class="btn btn--small" href="{{ register_url }}"{% if request.path == register_url %} aria-current="page"{% endif %}>Register</a>
+        {% endif %}
+      </nav>
+    </header>
+
+    <main id="main" tabindex="-1">
+      {% if messages %}
+        <div class="messages" role="status" aria-live="polite">
+          {% for message in messages %}
+            <p class="message message--{{ message.tags|default:'info' }}">{{ message }}</p>
+          {% endfor %}
+        </div>
+      {% endif %}
+      {% block content %}{% endblock %}
+    </main>
+
+    <footer class="site-footer">
+      <span>DetailWise · Urbana, IL · All times Central Time</span>
+      <span>INFO 490 course project · fictional shop</span>
+    </footer>
+  </div>
+</body>
+</html>

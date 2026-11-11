@@ -1,0 +1,46 @@
+# Secrets and local environment
+.env
+.env.*
+!.env.example
+.venv/
+venv/
+
+# Local database and generated files
+db.sqlite3
+db.sqlite3-journal
+db.sqlite3-wal
+db.sqlite3-shm
+staticfiles/
+media/
+
+# Python caches and test output
+__pycache__/
+*.py[cod]
+.coverage
+htmlcov/
+
+# Course documents and spreadsheets never belong in this repository
+*.pdf
+*.xlsx
+*.xls
+*.docx
+
+# Model weights (future AI work must not commit these)
+*.bin
+*.safetensors
+*.pt
+*.pth
+*.gguf
+*.onnx
+
+# Local tool state, logs and archives (not application code)
+.impeccable/
+.playwright-mcp/
+*.log
+*.zip
+
+# Editor / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

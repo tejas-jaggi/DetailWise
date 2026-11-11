@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block title %}Sign in{% endblock %}
+{% block content %}
+<section class="page-heading">
+  <h1>Sign in</h1>
+  <p>Sign in to book a service and see your bookings.</p>
+</section>
+
+<div class="panel form-panel">
+  {% if selected_service %}
+    <p class="note note--accent">Your selected service ({{ selected_service.name }}) will be kept.</p>
+  {% endif %}
+
+  {% if form.non_field_errors %}
+    <div class="form-error" role="alert">
+      {% for error in form.non_field_errors %}<p>{{ error }}</p>{% endfor %}
+    </div>
+  {% endif %}
+
+  <form method="post" action="{% url 'accounts:login' %}" novalidate>
+    {% csrf_token %}
+    {% for field in form %}
+      {% include "includes/form_field.html" %}
+    {% endfor %}
+    {% if next %}<input type="hidden" name="next" value="{{ next }}">{% endif %}
+    <div class="form-actions">
+      <button type="submit" class="btn btn--primary">Sign in</button>
+    </div>
+  </form>
+
+  <p class="form-footer">
+    New to DetailWise?
+    <a href="{% url 'accounts:register' %}{% if next %}?next={{ next|urlencode:'' }}{% endif %}">Create an account</a>
+  </p>
+</div>
+{% endblock %}

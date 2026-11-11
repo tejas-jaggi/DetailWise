@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block title %}Booking not found{% endblock %}
+{% block content %}
+<section class="page-heading">
+  <h1>Booking not found</h1>
+</section>
+<div class="panel empty-state">
+  <p>We could not find that booking in your account.</p>
+  <a class="btn btn--primary" href="{% url 'bookings:my_bookings' %}">Back to My Bookings</a>
+</div>
+{% endblock %}

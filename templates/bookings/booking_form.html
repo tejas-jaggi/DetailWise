@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}Book a service{% endblock %}
+{% block content %}
+<section class="page-heading">
+  <h1>Book a service</h1>
+  <p>Choose a service, date and time. Times are Central Time (Urbana, IL).</p>
+</section>
+
+<div class="panel form-panel">
+  {% if form.errors %}
+    <div class="form-error" role="alert">
+      <p>Your booking was not saved. Please correct the highlighted fields.</p>
+      {% for error in form.non_field_errors %}<p>{{ error }}</p>{% endfor %}
+    </div>
+  {% endif %}
+
+  <form method="post" action="{% url 'bookings:create' %}" novalidate>
+    {% csrf_token %}
+    {% for field in form %}
+      {% include "includes/form_field.html" %}
+    {% endfor %}
+    <div class="form-actions">
+      <button type="submit" class="btn btn--primary">Save booking</button>
+      <a class="btn btn--ghost" href="{% url 'bookings:catalog' %}">Back to Services</a>
+    </div>
+  </form>
+</div>
+
+<p class="scope-note">
+  Saving records your booking request. It does not confirm shop capacity.
+</p>
+{% endblock %}

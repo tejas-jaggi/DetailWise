@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block title %}Create an account{% endblock %}
+{% block content %}
+<section class="page-heading">
+  <h1>Create an account</h1>
+  <p>Customer accounts can book services and manage their own bookings.</p>
+</section>
+
+<div class="panel form-panel">
+  {% if selected_service %}
+    <p class="note note--accent">Your selected service ({{ selected_service.name }}) will be kept after you sign in.</p>
+  {% endif %}
+
+  {% if form.errors %}
+    <div class="form-error" role="alert">
+      <p>Please correct the highlighted fields.</p>
+      {% for error in form.non_field_errors %}<p>{{ error }}</p>{% endfor %}
+    </div>
+  {% endif %}
+
+  <form method="post" action="{% url 'accounts:register' %}" novalidate>
+    {% csrf_token %}
+    {% for field in form %}
+      {% include "includes/form_field.html" %}
+    {% endfor %}
+    {% if next %}<input type="hidden" name="next" value="{{ next }}">{% endif %}
+    <div class="form-actions">
+      <button type="submit" class="btn btn--primary">Create account</button>
+    </div>
+  </form>
+
+  <p class="form-footer">
+    Already have an account?
+    <a href="{% url 'accounts:login' %}{% if next %}?next={{ next|urlencode:'' }}{% endif %}">Sign in</a>
+  </p>
+</div>
+{% endblock %}
