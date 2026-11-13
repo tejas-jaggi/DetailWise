@@ -1,47 +1,65 @@
 /*
- * DetailWise design tokens: PROVISIONAL THEME (not yet approved by the team).
+ * DetailWise design tokens: APPROVED THEME.
  *
- * Layout and usability follow Bochen's original prototype; the cyan/magenta
- * accents are borrowed, in moderation, from the Lucy Moon variant.
+ * Source of truth: Bochen Zhang's prototype (DetailWise_Frontend_Demo.html),
+ * approved by the team. Dark, high-contrast surfaces; yellow for primary
+ * actions and the brand; cyan for information, links, focus and the AI
+ * distinction; a compact 3px radius.
+ *
  * Change the look by editing values here only. base.css and components.css
  * must reference these variables, never raw colors.
  */
 :root {
   color-scheme: dark;
 
-  /* Surfaces */
-  --color-bg: #0a0e17;
-  --color-surface: #121826;
-  --color-surface-raised: #182033;
-  --color-border: #28324a;
-  --color-border-strong: #3a4766;
+  /* Surfaces (prototype --bg, --panel, --well, --input, --line) */
+  --color-bg: #0b0e14;
+  --color-surface: #131925;
+  --color-surface-raised: #1b2230;
+  --color-input: #0d111a;
+  --color-border: #303c50;
+  --color-border-strong: #44536d;
+  --color-hover-bg: #1b2433;
+  --color-grid: rgb(97 129 167 / 0.035);
 
-  /* Text */
-  --color-text: #e9edf5;
-  --color-text-muted: #a6b0c4;
+  /* Text (prototype --text, --body, --muted) */
+  --color-text: #f1f4f8;
+  --color-text-body: #d0d8e3;
+  --color-text-muted: #a5b2c5;
+  --color-placeholder: #7c8ca4;
 
-  /* Accents */
-  --color-accent: #22d3ee;          /* primary actions (cyan) */
-  --color-accent-hover: #67e8f9;
-  --color-on-accent: #041318;
-  --color-highlight: #ff3d8b;       /* framing, focus, emphasis (magenta) */
+  /* Primary action and brand: yellow, with dark text */
+  --color-accent: #f4e900;
+  --color-accent-hover: #fff74e;
+  --color-on-accent: #101216;
 
-  /* Status */
-  --color-success: #4ade80;
-  --color-success-bg: #10291b;
-  --color-danger: #ff8a93;
-  --color-danger-bg: #2e1419;
-  --color-info-bg: #0f2430;
-  --color-muted-bg: #1d2436;
+  /* Information, links, focus and AI: cyan */
+  --color-info: #59dce8;
+  --color-info-bg: #102832;
+  --color-info-border: #2d6473;
 
-  /* Type: system font stacks (no embedded or downloaded fonts) */
+  /* Errors */
+  --color-danger: #ff7b84;
+  --color-danger-bg: #2a141b;
+
+  /* Neutral states (past or cancelled) */
+  --color-muted-bg: #0d111a;
+
+  /* Type. Headings, buttons and prices use a condensed face. No font files are
+     shipped: the prototype's embedded font has an unverified web licence, so
+     these are installed system fonts (Arial Narrow is the prototype's own
+     fallback). Body text uses the system UI font. */
   --font-sans: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-head: "Arial Narrow", "Helvetica Neue Condensed", "Bahnschrift Condensed", "Roboto Condensed", "Liberation Sans Narrow", Arial, sans-serif;
   --font-mono: ui-monospace, "Cascadia Mono", "SFMono-Regular", Consolas, monospace;
+  --text-xs: 0.8125rem;
   --text-sm: 0.875rem;
   --text-base: 1rem;
-  --text-lg: 1.125rem;
-  --text-xl: 1.5rem;
-  --text-2xl: clamp(1.75rem, 1.2rem + 2.2vw, 2.6rem);
+  --text-lg: 1.1875rem;
+  --text-xl: 1.6875rem;
+  --text-2xl: clamp(2.1875rem, 1.6rem + 1.6vw, 2.625rem);
+  --text-display: clamp(2.5rem, 1.9rem + 2.2vw, 3.1875rem);
+  --text-price: clamp(2.4rem, 2rem + 1vw, 2.8rem);
 
   /* Spacing, shape, depth */
   --space-1: 0.25rem;
@@ -51,9 +69,13 @@
   --space-5: 1.5rem;
   --space-6: 2rem;
   --space-7: 3rem;
-  --radius: 4px;
-  --radius-lg: 8px;
-  --shadow: 0 1px 2px rgb(0 0 0 / 0.4), 0 8px 24px rgb(0 0 0 / 0.25);
-  --focus-ring: 0 0 0 3px var(--color-bg), 0 0 0 5px var(--color-highlight);
-  --container: 72rem;
+  --radius: 3px;
+  --radius-lg: 3px;
+  --shadow: 0 30px 80px rgb(0 0 0 / 0.55);
+  --focus-ring: 0 0 0 2px var(--color-bg), 0 0 0 5px var(--color-info);
+  --container: 75rem;
+
+  /* Motion: one short entrance, as in the prototype */
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --duration-enter: 160ms;
 }

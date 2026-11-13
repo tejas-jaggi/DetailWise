@@ -29,6 +29,37 @@ def env_list(name: str, default: str = "") -> list[str]:
     return [item.strip() for item in raw.split(",") if item.strip()]
 
 
+def guidance_settings(environ) -> dict:
+    """Settings for weather guidance. Only the local Ollama values can be overridden.
+
+    A blank environment value means "use the default".
+    """
+
+    def text(name: str, default: str) -> str:
+        return (environ.get(name) or "").strip() or default
+
+    raw_timeout = text("GUIDANCE_LLM_TIMEOUT", "45")
+    if not raw_timeout.isdigit() or int(raw_timeout) < 1:
+        raise ImproperlyConfigured(
+            "GUIDANCE_LLM_TIMEOUT must be a whole number of seconds (1 or more)."
+        )
+
+    return {
+        # Fixed shop location: Urbana, IL. All forecast dates and hours are Central Time.
+        "LATITUDE": 40.11,
+        "LONGITUDE": -88.21,
+        "TIMEZONE": "America/Chicago",
+        "FORECAST_URL": "https://api.open-meteo.com/v1/forecast",
+        "FORECAST_DAYS": 16,
+        "WEATHER_TIMEOUT": 5,
+        "CACHE_SECONDS": 30 * 60,
+        # Local AI model (Ollama). No API key and no hosted provider.
+        "OLLAMA_BASE_URL": text("OLLAMA_BASE_URL", "http://127.0.0.1:11434"),
+        "OLLAMA_MODEL": text("OLLAMA_MODEL", "llama3"),
+        "LLM_TIMEOUT": int(raw_timeout),
+    }
+
+
 SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY", "")
 if not SECRET_KEY:
     raise ImproperlyConfigured(
@@ -52,6 +83,7 @@ INSTALLED_APPS = [
     # DetailWise apps
     "accounts",
     "bookings",
+    "guidance",
 ]
 
 MIDDLEWARE = [
@@ -127,3 +159,8 @@ STATICFILES_DIRS = [BASE_DIR / "static"]
 STATIC_ROOT = BASE_DIR / "staticfiles"
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+
+# Weather guidance (Open-Meteo forecast and optional local AI explanation)
+
+GUIDANCE = guidance_settings(os.environ)

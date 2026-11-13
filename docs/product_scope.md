@@ -1,14 +1,15 @@
 # DetailWise: Updated Product Scope (P2-A3 first draft)
 
-*INFO 490 Project 2, Team 3. Draft prepared November 8, 2026.*
+*INFO 490 Project 2, Team 3. Draft prepared November 8, 2026; feature status
+updated November 12, 2026.*
 
 ## Product idea
 
 DetailWise is a booking web application for a single car detailing shop in
 Urbana, IL. Customers browse three services, create an account and save a
-booking for a date and time. Before saving, they will see weather-informed
+booking for a date and time. Before saving, they can see weather-informed
 guidance about whether the forecast suits the service. Shop staff will see
-booking trends and export booking data.
+booking trends and export booking data (planned).
 
 ## Problem
 
@@ -34,12 +35,16 @@ The four features proposed in P2-A2 are grouped into three:
      - A private My Bookings list and booking detail page.
      - Ownership checks, so customers only ever see their own bookings.
    - Next: edit and cancel a booking (as a status change, not a deletion).
-2. **Weather-informed AI guidance.** *(Planned.)*
-   - The booking form will fetch an Open-Meteo forecast for the chosen date.
-   - Code will turn the forecast into structured facts.
-   - A language model will explain those facts in plain English for the chosen service. For example, rain matters for exterior work but not for interior cleaning.
-   - The output will be validated, with a template fallback.
-   - The guidance never changes or blocks a booking.
+2. **Weather-informed AI guidance.** *(Implemented and covered by automated tests; Task 10 prompt v1 baseline run on November 12; human review and prompt comparison planned.)*
+   - The booking page shows the Open-Meteo forecast for the chosen date and hour.
+   - Python turns the forecast into structured facts and classes (rain, wind,
+     temperature, forecast confidence) and writes the recommendation.
+   - A Llama 3 model (run through Ollama and called by the Django server)
+     explains those facts in plain English for the chosen service. For example, rain matters for exterior work but not for
+     interior cleaning.
+   - Every reply is validated against the facts; anything rejected, slow or
+     unavailable falls back to standard guidance written by Python.
+   - The guidance never changes or blocks a booking. See `docs/ai_plan.md`.
 3. **Staff analytics and export.** *(Planned.)*
    - A staff-only dashboard with a date-range filter.
    - Totals and Vega-Lite charts by date and by service, fed by internal JSON endpoints.
@@ -53,11 +58,16 @@ The four features proposed in P2-A2 are grouped into three:
 - The listed price is stored on each booking (`price_at_booking`), so estimated
   values stay correct if a price changes later.
 - Each service records whether it is exterior, interior or mixed work. The AI
-  guidance will use this instead of hard-coded service names.
+  guidance uses this instead of hard-coded service names.
 - The server checks the full appointment date **and time** against the current
   Central Time. The clickable prototype only checked the date.
 - Staff accounts cannot create customer bookings in this version.
-- The AI provider and model are not chosen yet. Choosing them is part of the next milestone.
+- The AI model is chosen: Llama 3 8B, run locally through Ollama (no API key,
+  no per-call cost, no booking data sent to a third party).
+- The AI explains the forecast but **does not write the recommendation**. In a
+  planning test, the model invented product advice ("use a water-repellent
+  coating"), so the recommendation is written by Python and the model's reply
+  is checked before it is shown.
 
 ## Scope boundaries (unchanged)
 

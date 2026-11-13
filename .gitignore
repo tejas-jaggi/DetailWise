@@ -10,6 +10,9 @@ db.sqlite3
 db.sqlite3-journal
 db.sqlite3-wal
 db.sqlite3-shm
+# Any other local or temporary database file (the project ships none)
+*.sqlite3
+*.db
 staticfiles/
 media/
 
@@ -25,13 +28,17 @@ htmlcov/
 *.xls
 *.docx
 
-# Model weights (future AI work must not commit these)
+# Model weights (never commit these; Ollama stores its models outside the project)
 *.bin
 *.safetensors
 *.pt
 *.pth
 *.gguf
 *.onnx
+
+# Task 10 evaluation results (written by `manage.py guidance_evaluate --live`;
+# summarize chosen results in docs/task10_evaluation.md instead of committing raw files)
+eval_results/
 
 # Local tool state, logs and archives (not application code)
 .impeccable/

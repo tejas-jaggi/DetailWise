@@ -11,19 +11,51 @@ html {
 
 body {
   margin: 0;
-  background: var(--color-bg);
+  min-width: 20rem;
+  background-color: var(--color-bg);
+  /* The prototype's faint drafting grid behind every page. */
+  background-image:
+    linear-gradient(var(--color-grid) 1px, transparent 1px),
+    linear-gradient(90deg, var(--color-grid) 1px, transparent 1px);
+  background-size: 48px 48px;
   color: var(--color-text);
   font-family: var(--font-sans);
   font-size: var(--text-base);
-  line-height: 1.55;
+  line-height: 1.5;
+  accent-color: var(--color-accent);
+  caret-color: var(--color-info);
+}
+
+::selection {
+  background: var(--color-accent);
+  color: var(--color-on-accent);
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+button,
+a,
+input,
+select,
+summary {
+  touch-action: manipulation;
 }
 
 h1,
 h2,
 h3 {
-  line-height: 1.2;
   margin: 0 0 var(--space-3);
-  letter-spacing: -0.01em;
+  font-family: var(--font-head);
+  font-weight: 700;
+  font-stretch: condensed;
+  line-height: 1.12;
+  letter-spacing: 0.01em;
+  text-wrap: balance;
 }
 
 h1 { font-size: var(--text-2xl); }
@@ -35,12 +67,12 @@ p {
 }
 
 a {
-  color: var(--color-accent);
-  text-underline-offset: 0.18em;
+  color: var(--color-info);
+  text-underline-offset: 0.2em;
 }
 
 a:hover {
-  color: var(--color-accent-hover);
+  text-decoration: none;
 }
 
 :focus-visible {
@@ -54,9 +86,8 @@ main:focus {
 }
 
 .container {
-  max-width: var(--container);
+  width: min(var(--container), calc(100% - 3rem));
   margin: 0 auto;
-  padding: 0 var(--space-4);
   min-height: 100vh;
   display: flex;
   flex-direction: column;
@@ -64,13 +95,13 @@ main:focus {
 
 main {
   flex: 1;
-  padding: var(--space-6) 0 var(--space-7);
+  padding: 0 0 var(--space-7);
 }
 
 .skip-link {
   position: absolute;
   left: var(--space-4);
-  top: -3rem;
+  top: -4rem;
   z-index: 10;
   padding: var(--space-2) var(--space-4);
   background: var(--color-accent);
@@ -99,11 +130,18 @@ main {
   color: var(--color-text-muted);
 }
 
+@media (max-width: 47.5rem) {
+  .container {
+    width: calc(100% - 2rem);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
   *::after {
     transition-duration: 0.01ms !important;
     animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
   }
 }

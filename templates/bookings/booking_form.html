@@ -6,6 +6,7 @@
   <p>Choose a service, date and time. Times are Central Time (Urbana, IL).</p>
 </section>
 
+<div class="booking-layout">
 <div class="panel form-panel">
   {% if form.errors %}
     <div class="form-error" role="alert">
@@ -24,6 +25,8 @@
       <a class="btn btn--ghost" href="{% url 'bookings:catalog' %}">Back to Services</a>
     </div>
   </form>
+</div>
+{% include "guidance/_weather_panel.html" %}
 </div>
 
 <p class="scope-note">

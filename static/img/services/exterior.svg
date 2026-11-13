@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 72 72" width="72" height="72" fill="none">
+  <g id="wash-spray-action" stroke="#00E5FF" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M58 10 L46 22" />
+    <polygon points="46,22 42,20 44,26" fill="#00E5FF" />
+    <path d="M41 24 L25 32" stroke-dasharray="3 3" />
+    <path d="M43 27 L33 35" stroke-dasharray="3 3" />
+    <path d="M18 22 C18 22 15 26 15 28 A3 3 0 0 0 21 28 C21 26 18 22 18 22 Z" fill="#00E5FF" fill-opacity="0.25" />
+    <path d="M28 16 C28 16 25.5 19.5 25.5 21 A2.5 2.5 0 0 0 30.5 21 C30.5 19.5 28 16 28 16 Z" fill="#00E5FF" fill-opacity="0.25" />
+  </g>
+  <g id="car-exterior-body" stroke="#F3F5F8" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M10 48 L14 38 L25 38 L32 30 L50 30 L57 38 L62 40 L62 48 Z" fill="#161D2B" />
+    <path d="M27 38 L33 32 L48 32 L53 38 Z" stroke="#9BA6B8" stroke-width="1.6" />
+    <circle cx="22" cy="49" r="5.5" fill="#0B0F17" stroke="#FCEE0A" stroke-width="2.2" />
+    <circle cx="50" cy="49" r="5.5" fill="#0B0F17" stroke="#FCEE0A" stroke-width="2.2" />
+    <line x1="8" y1="57" x2="64" y2="57" stroke="#2B3750" stroke-width="2" />
+  </g>
+</svg>
