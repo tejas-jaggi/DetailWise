@@ -232,7 +232,7 @@
     ];
     if (facts.time && known(facts.appt_rain_chance_pct)) {
       rows.push({
-        label: "Rain chance, hour starting " + formatTime(facts.time),
+        label: "Rain chance, hour containing your appointment",
         value: facts.appt_rain_chance_pct + "%",
       });
     }

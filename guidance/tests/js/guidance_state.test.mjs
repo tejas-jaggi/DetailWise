@@ -275,11 +275,21 @@ test("forecast rows name both rain values and never a bare rain chance", () => {
   const rows = G.forecastRows(FACTS);
   const labels = rows.map((row) => row.label);
   assert.ok(labels.includes("Highest hourly rain chance"));
-  assert.ok(labels.includes("Rain chance, hour starting 10:00 AM"));
+  assert.ok(labels.includes("Rain chance, hour containing your appointment"));
   assert.ok(!labels.includes("Rain chance"));
   assert.deepEqual(rows.find((r) => r.label === "Highest hourly rain chance").value, "20%");
   assert.deepEqual(rows.find((r) => r.label === "Temperature").value, "High 52°F · Low 37°F");
   assert.deepEqual(rows.find((r) => r.label === "Wind").value, "Up to 10 mph · gusts 17 mph");
+});
+
+test("hourly rain wording preserves exact and half-hour appointment times", () => {
+  for (const [time, heading] of [["10:00", "Thu, Nov 12 · 10:00 AM"],
+    ["10:30", "Thu, Nov 12 · 10:30 AM"]]) {
+    const facts = { ...FACTS, time };
+    const row = G.forecastRows(facts).find((r) => r.label.startsWith("Rain chance"));
+    assert.deepEqual(row, { label: "Rain chance, hour containing your appointment", value: "11%" });
+    assert.equal(G.forecastHeading(facts), heading);
+  }
 });
 
 test("forecast rows omit the hour rain row without a value and mark missing values", () => {

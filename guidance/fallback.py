@@ -51,7 +51,7 @@ def conditions_text(facts) -> str:
         )
     if facts.appt_rain_chance_pct is not None:
         sentences.append(
-            f"For the hour starting at your {format_time(facts.time)} appointment, the rain "
+            f"For the hour containing your {format_time(facts.time)} appointment, the rain "
             f"probability is {facts.appt_rain_chance_pct}%."
         )
 
@@ -82,15 +82,16 @@ def conditions_text(facts) -> str:
 
     if facts.time is not None:
         temperature, hour_wind = facts.appt_temp_f, facts.appt_wind_mph
-        lead = f"At your {format_time(facts.time)} appointment time, the forecast"
+        lead = f"For your {format_time(facts.time)} appointment, the hourly"
         if temperature is not None and hour_wind is not None:
             sentences.append(
-                f"{lead} temperature is {temperature}°F and the wind speed is {hour_wind} mph."
+                f"{lead} temperature estimate is {temperature}°F and the hourly wind speed "
+                f"estimate is {hour_wind} mph."
             )
         elif temperature is not None:
-            sentences.append(f"{lead} temperature is {temperature}°F.")
+            sentences.append(f"{lead} temperature estimate is {temperature}°F.")
         elif hour_wind is not None:
-            sentences.append(f"{lead} wind speed is {hour_wind} mph.")
+            sentences.append(f"{lead} wind speed estimate is {hour_wind} mph.")
     return " ".join(sentences)
 
 

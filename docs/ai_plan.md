@@ -199,10 +199,12 @@ Python decides every class. The model copies them and never decides them.
 **Peak-hourly vs appointment-hour rain probability.** Open-Meteo's daily
 `precipitation_probability_max` is the highest *single-hour* probability of the
 date, not the chance of rain all day. The appointment-hour value is a separate
-fact: Open-Meteo's hourly probability covers the *preceding* hour, so the hour
-starting at H:MM uses the H+1:00 stamp. Temperature and wind are instantaneous
-and use the H:00 stamp. The panel labels them "Highest hourly rain chance" and
-"Rain chance, hour starting {time}"; it never shows a bare "Rain chance".
+fact: Open-Meteo's hourly probability covers the *preceding* hour, so an H:MM
+appointment uses the H+1:00 stamp for the H:00 to H+1:00 hour containing it.
+Temperature and wind use the instantaneous H:00 values as hourly estimates,
+without claiming minute-level precision. The selected appointment time stays
+unchanged. The panel labels the rain values "Highest hourly rain chance" and
+"Rain chance, hour containing your appointment"; it never shows a bare "Rain chance".
 
 ## 7. Deterministic customer copy
 

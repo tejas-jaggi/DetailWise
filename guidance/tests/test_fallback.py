@@ -15,7 +15,7 @@ from guidance.tests.test_validation import make_facts, valid_output
 
 LABELS = ["Conditions", "For your service", "Forecast confidence", "Recommendation"]
 PEAK_SENTENCE = "The highest hourly rain probability on Thu, Nov 12 is 60%."
-HOUR_SENTENCE = "For the hour starting at your 10:00 AM appointment, the rain probability is 20%."
+HOUR_SENTENCE = "For the hour containing your 10:00 AM appointment, the rain probability is 20%."
 
 
 def by_label(sections):
@@ -40,8 +40,8 @@ class FallbackSectionTests(SimpleTestCase):
                     "The forecast high is 52°F and the low is 37°F. "
                     "The forecast maximum wind speed is 10 mph, with gusts up to 17 mph. "
                     "The forecast precipitation total is 0.02 inches. "
-                    "At your 10:00 AM appointment time, the forecast temperature is 50°F and "
-                    "the wind speed is 10 mph."
+                    "For your 10:00 AM appointment, the hourly temperature estimate is 50°F and "
+                    "the hourly wind speed estimate is 10 mph."
                 ),
                 "For your service": classify.service_consideration("exterior"),
                 "Forecast confidence": classify.confidence_sentence("higher", 2),
@@ -83,7 +83,7 @@ class FallbackSectionTests(SimpleTestCase):
         self.assertNotRegex(conditions, r"(?<!\d) (mph|inch)")
         self.assertIn("The forecast low is 37°F.", conditions)
         self.assertIn("The forecast maximum wind speed is 10 mph.", conditions)
-        self.assertIn("At your 10:00 AM appointment time, the forecast wind speed is 10 mph.",
+        self.assertIn("For your 10:00 AM appointment, the hourly wind speed estimate is 10 mph.",
                       conditions)
         self.assertNotIn("high is", conditions)
         self.assertNotIn("gust", conditions)
@@ -95,7 +95,7 @@ class FallbackSectionTests(SimpleTestCase):
             (dict(temp_low_f=None), "The forecast high is 52°F."),
             (dict(temp_low_f=-3), "The forecast high is 52°F and the low is -3°F."),
             (dict(hourly={"wind_speed_10m": {"2026-11-12T10:00": None}}),
-             "At your 10:00 AM appointment time, the forecast temperature is 50°F."),
+             "For your 10:00 AM appointment, the hourly temperature estimate is 50°F."),
             (dict(precipitation_in=1.0), "The forecast precipitation total is 1 inch."),
             (dict(precipitation_in=0.0), "The forecast precipitation total is 0 inches."),
         ]
@@ -134,8 +134,21 @@ class FallbackSectionTests(SimpleTestCase):
         facts = make_facts(at=time(14, 30),
                            hourly={"precipitation_probability": {"2026-11-12T15:00": 35}})
         conditions = by_label(fallback.fallback_sections(facts))["Conditions"]
-        self.assertIn("For the hour starting at your 2:30 PM appointment, the rain "
+        self.assertIn("For the hour containing your 2:30 PM appointment, the rain "
                       "probability is 35%.", conditions)
+
+    def test_hourly_estimates_keep_exact_and_half_hour_appointment_times(self):
+        for at, label in ((time(10, 0), "10:00 AM"), (time(10, 30), "10:30 AM")):
+            with self.subTest(time=at):
+                facts = make_facts(at=at)
+                conditions = by_label(fallback.fallback_sections(facts))["Conditions"]
+                self.assertIn(f"For the hour containing your {label} appointment, "
+                              "the rain probability is 20%.", conditions)
+                self.assertIn(f"For your {label} appointment, the hourly temperature "
+                              "estimate is 50°F and the hourly wind speed estimate is 10 mph.",
+                              conditions)
+                self.assertNotIn("hour starting", conditions)
+                self.assertEqual(facts.time, at)
 
     def test_fallback_shows_known_concerns_when_rain_missing(self):
         facts = make_facts(peak_rain_chance_pct=None, wind_max_mph=35, temp_low_f=25)
@@ -148,6 +161,18 @@ class FallbackSectionTests(SimpleTestCase):
         self.assertIn(classify.CONCERN_PHRASES["freezing"], recommendation)
         self.assertIn("peak hourly rain probability", recommendation)
         self.assertEqual(recommendation, python_recommendation(facts))
+
+    def test_missing_hourly_values_use_estimate_and_containing_hour_wording(self):
+        facts = make_facts(at=time(10, 30), hourly={
+            "temperature_2m": {"2026-11-12T10:00": None},
+            "wind_speed_10m": {"2026-11-12T10:00": None},
+            "precipitation_probability": {"2026-11-12T11:00": None},
+        })
+        recommendation = by_label(fallback.fallback_sections(facts))["Recommendation"]
+        self.assertIn("hourly temperature estimate for your appointment", recommendation)
+        self.assertIn("hourly wind speed estimate for your appointment", recommendation)
+        self.assertIn("rain probability for the hour containing your appointment", recommendation)
+        self.assertNotIn("hour starting", recommendation)
 
 
 class AiSectionTests(SimpleTestCase):

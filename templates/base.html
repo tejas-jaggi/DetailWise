@@ -42,8 +42,8 @@
             <button type="submit" class="nav-btn">Sign out <span class="visually-hidden">({{ user.get_username }})</span></button>
           </form>
         {% else %}
-          <a class="nav-btn" href="{{ login_url }}"{% if request.path == login_url %} aria-current="page"{% endif %}>Sign In</a>
-          <a class="nav-btn" href="{{ register_url }}"{% if request.path == register_url %} aria-current="page"{% endif %}>Register</a>
+          <a class="nav-btn" href="{{ login_url }}{% if next %}?next={{ next|urlencode:'' }}{% endif %}"{% if request.path == login_url %} aria-current="page"{% endif %}>Sign In</a>
+          <a class="nav-btn" href="{{ register_url }}{% if next %}?next={{ next|urlencode:'' }}{% endif %}"{% if request.path == register_url %} aria-current="page"{% endif %}>Register</a>
         {% endif %}
       </nav>
     </header>
