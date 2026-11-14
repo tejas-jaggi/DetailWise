@@ -15,6 +15,13 @@
     <div><dt>Saved on</dt><dd>{{ booking.created_at|date:"M j, Y, g:i A" }} CT</dd></div>
   </dl>
   <div class="form-actions">
+    {% if booking.can_modify %}
+    <a class="btn btn--primary" href="{% url 'bookings:edit' booking.pk %}">Edit booking</a>
+    <form method="post" action="{% url 'bookings:cancel' booking.pk %}">
+      {% csrf_token %}
+      <button type="submit" class="btn btn--ghost">Cancel booking</button>
+    </form>
+    {% endif %}
     <a class="btn btn--ghost" href="{% url 'bookings:my_bookings' %}">Back to My Bookings</a>
   </div>
 </div>

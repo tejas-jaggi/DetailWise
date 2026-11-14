@@ -1,9 +1,10 @@
 {% extends "base.html" %}
-{% block title %}Book a service{% endblock %}
+{% block title %}{% if booking %}Edit booking{% else %}Book a service{% endif %}{% endblock %}
 {% block content %}
 <section class="page-heading">
-  <h1>Book a service</h1>
+  <h1>{% if booking %}Edit booking {{ booking.reference }}{% else %}Book a service{% endif %}</h1>
   <p>Choose a service, date and time. Times are Central Time (Urbana, IL).</p>
+  {% if booking %}<p>Changing the service uses its current listed price. Changing only the date or time keeps your saved price.</p>{% endif %}
 </section>
 
 <div class="booking-layout">
@@ -15,14 +16,18 @@
     </div>
   {% endif %}
 
-  <form method="post" action="{% url 'bookings:create' %}" novalidate>
+  <form method="post" action="{% if booking %}{% url 'bookings:edit' booking.pk %}{% else %}{% url 'bookings:create' %}{% endif %}" novalidate>
     {% csrf_token %}
     {% for field in form %}
       {% include "includes/form_field.html" %}
     {% endfor %}
     <div class="form-actions">
-      <button type="submit" class="btn btn--primary">Save booking</button>
+      <button type="submit" class="btn btn--primary">{% if booking %}Save changes{% else %}Save booking{% endif %}</button>
+      {% if booking %}
+      <a class="btn btn--ghost" href="{% url 'bookings:detail' booking.pk %}">Back to booking</a>
+      {% else %}
       <a class="btn btn--ghost" href="{% url 'bookings:catalog' %}">Back to Services</a>
+      {% endif %}
     </div>
   </form>
 </div>

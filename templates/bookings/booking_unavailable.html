@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% block title %}Booking cannot be changed{% endblock %}
+{% block content %}
+<section class="page-heading">
+  <h1>Booking cannot be changed</h1>
+  <p>Only upcoming saved bookings can be edited or cancelled. This booking is cancelled or its appointment time has passed.</p>
+</section>
+<a class="btn btn--ghost" href="{% url 'bookings:detail' booking.pk %}">Back to booking</a>
+{% endblock %}
