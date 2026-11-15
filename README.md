@@ -47,7 +47,7 @@ INFO 490 Project 2, Team 3: Yidan Huang, Bochen Zhang, Tianze Guo and Tejas Jagg
 | Customer-only JSON endpoints for the forecast and the explanation | Working |
 | Live-check command (`guidance_check`) | Working |
 | Edit and cancel a booking | Planned |
-| Staff dashboard (Vega-Lite charts, CSV export) | Planned |
+| Staff dashboard (Vega-Lite charts, CSV export) | Implemented; see staff reporting below |
 | AI evaluation (accepted/fallback rates, failure analysis) | Prompt v1 baseline run Nov 12 on five fixed cases: validator acceptance 5 of 5, fallback 0 of 5, median latency 11.4 s. Human review pending ([review packet](docs/task10_v1_review_packet.md)); prompt v2 proposed, not implemented ([docs/task10_evaluation.md](docs/task10_evaluation.md)) |
 | Deployment | Planned |
 
@@ -150,6 +150,47 @@ Then open these pages:
 - <http://127.0.0.1:8000/bookings/new/> to book (sign-in required)
 - <http://127.0.0.1:8000/bookings/> for My Bookings (sign-in required)
 - <http://127.0.0.1:8000/admin/> for the Django admin (staff only)
+
+## Staff reporting
+
+Staff can open **Dashboard** in the navigation, or visit `/staff/`. The existing
+staff-only permission decorator protects both this page and `/staff/bookings.csv`.
+Customer accounts receive 403; signed-out users are redirected to sign in.
+
+- `start_date` and `end_date` filter **appointment dates in America/Chicago**,
+  inclusively. Either bound may be omitted; both blank means all dates.
+  Invalid or reversed ranges return 400 with field errors, including on export.
+- Total bookings and both charts include cancellations. Upcoming means saved
+  appointments strictly after now, following the booking workflow's DST rules.
+- Estimated revenue sums saved price snapshots for non-cancelled bookings,
+  both past and future. It is not collected payment or confirmed capacity.
+- The daily trend omits dates without bookings. Service popularity includes
+  inactive services with historical bookings. Dashboard reporting uses three
+  aggregate queries, without loading customer records.
+- CSV export contains individual booking references, service names, appointment
+  dates/times, stored statuses and estimated prices in USD. It uses the same
+  filters, includes cancelled records, and contains no customer information.
+  Rows stream in appointment order. An empty result exports headers only.
+  UTF-8 with a BOM supports Unicode in spreadsheets; CSV quoting handles commas,
+  quotes and newlines. Formula-like cells are prefixed with an apostrophe,
+  including formulas preceded by whitespace or control characters. That
+  protective apostrophe is part of the exported value.
+- Reports and exports send private, no-store cache headers.
+- Charts use pinned Vega 6.4.0, Vega-Lite 6.5.0 and Vega-Embed 7.3.0 from
+  jsDelivr, following the [official embedding documentation](https://vega.github.io/vega-lite/usage/embed.html).
+  Chart data is safely embedded using Django's `json_script`; no customer data
+  is included. Rendering charts needs access to the CDN. Server-rendered data
+  tables remain available if scripts are unavailable or JavaScript is disabled.
+
+Run the reporting tests with:
+
+```bash
+python manage.py test bookings.tests.test_staff_dashboard
+```
+
+The dashboard embeds its aggregate JSON in the page; it does not add the separate
+JSON API previously proposed in the roadmap. CSV is a per-booking export, as
+required for this implementation, rather than the older proposed daily summary.
 
 ## AI weather guidance
 
@@ -318,9 +359,8 @@ replies are cached in memory for 30 minutes.
 
 ## Scope notes and next steps
 
-- Booking edit/cancel and the staff dashboard with CSV export are the next
-  features (see [the roadmap](docs/roadmap.md)). Until then, staff manage
-  bookings in the Django admin.
+- Booking edit/cancel remains planned on this branch. Staff reporting and CSV
+  export are implemented; staff manage bookings in the Django admin.
 - **AI:** the validator is rule-based, so it catches known kinds of error but
   cannot prove that an accepted reply is correct. Running the model needs
   about 6 GB of free memory. Measured so far, all on one laptop: the first live
