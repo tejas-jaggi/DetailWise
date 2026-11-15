@@ -49,7 +49,7 @@ INFO 490 Project 2, Team 3: Yidan Huang, Bochen Zhang, Tianze Guo and Tejas Jagg
 | Edit and cancel a booking | Planned |
 | Staff dashboard (Vega-Lite charts, CSV export) | Planned |
 | AI evaluation (accepted/fallback rates, failure analysis) | Prompt v1 baseline run Nov 12 on five fixed cases: validator acceptance 5 of 5, fallback 0 of 5, median latency 11.4 s. Human review pending ([review packet](docs/task10_v1_review_packet.md)); prompt v2 proposed, not implemented ([docs/task10_evaluation.md](docs/task10_evaluation.md)) |
-| Deployment | Planned |
+| Deployment | PostgreSQL, HTTPS settings, static files and WSGI startup prepared; hosting and live PostgreSQL/HTTPS verification pending ([deployment guide](docs/deployment.md)) |
 
 The workflow is: **Service Catalog → Sign In/Register → Create Booking (with
 optional weather guidance) → Database Save → My Bookings**.
@@ -63,12 +63,16 @@ optional weather guidance) → Database Save → My Bookings**.
   |---|---|
   | Django 5.2.19 (LTS) | Web framework |
   | python-dotenv 1.2.1 | Loads settings from a local `.env` file |
+  | psycopg[binary] 3.3.9 | PostgreSQL driver, including its binary runtime |
+  | WhiteNoise 6.12.0 | Serves collected production static files |
+  | Waitress 3.0.2 | Production WSGI server on Windows and Unix |
   | asgiref, sqlparse | Django dependencies |
   | tzdata | Time zone data for `America/Chicago` (needed on Windows) |
 
   The weather and AI features use only the Python standard library. There is no
   AI SDK and no API key.
-- The database is SQLite during development. Nothing needs installing.
+- The database defaults to SQLite during development; no database server is needed.
+  Production PostgreSQL configuration is described in [the deployment guide](docs/deployment.md).
 - **Optional, for AI explanations:** [Ollama](https://ollama.com) and the
   `llama3` model (about 4.7 GB to download; about 6 GB of free memory to run).
   Without it, the app works and shows standard guidance.
@@ -78,6 +82,8 @@ optional weather guidance) → Database Save → My Bookings**.
 
 Run these commands from the repository root: the folder that contains
 `manage.py` (named `DetailWise` when cloned from GitHub).
+If you already have a `.env`, keep it; skip the copy command and add only any
+missing settings from `.env.example`.
 
 **Windows (PowerShell):**
 
@@ -110,6 +116,8 @@ python -c "from django.core.management.utils import get_random_secret_key; print
 | `DJANGO_SECRET_KEY` | (generated) | Required. The app refuses to start without it. |
 | `DJANGO_DEBUG` | `True` | Use `True` only for local development. |
 | `DJANGO_ALLOWED_HOSTS` | `localhost,127.0.0.1` | Comma-separated host names. |
+| `DJANGO_DB_ENGINE` | `sqlite` | Default. Use `postgresql` only with the production database variables. |
+| `DJANGO_READ_DOT_ENV` | `True` | Default. Existing process variables take precedence; set `False` in production to skip `.env`. |
 | `OLLAMA_BASE_URL` | `http://127.0.0.1:11434` | Optional. Where **the Django server** reaches Ollama. |
 | `OLLAMA_MODEL` | `llama3` | Optional. Model name as Ollama knows it. |
 | `GUIDANCE_LLM_TIMEOUT` | `45` | Optional. Seconds to wait for the model (whole number, 1 or more). |
@@ -118,14 +126,22 @@ python -c "from django.core.management.utils import get_random_secret_key; print
 in a ZIP of the project, a screenshot or a chat). If it is ever shared,
 generate a new `DJANGO_SECRET_KEY`.
 
+Keep `DJANGO_DEBUG=True` for local HTTP development and the existing tests.
+With `DJANGO_DEBUG=False` (the default if omitted), the app requires explicit
+allowed hosts, enables HTTPS redirects and secure cookies, and uses collected,
+hashed static files. HSTS and forwarded-protocol trust remain disabled until
+explicitly configured. See [production configuration](docs/deployment.md) for
+all environment variables, PostgreSQL setup, proxy requirements and commands.
+
 ## Database and seed data
 
 ```bash
 python manage.py migrate
 ```
 
-This creates `db.sqlite3` and seeds the three services through a reversible
-data migration (`bookings/migrations/0002_seed_services.py`). The service
+With the local SQLite configuration, this creates `db.sqlite3` and seeds the
+three services through a reversible data migration
+(`bookings/migrations/0002_seed_services.py`). The service
 descriptions come from wireframe S01.
 
 To create an administrator account, which is also a staff account:
@@ -243,7 +259,12 @@ v1 baseline was run on November 12; its results are in
 
 ## Run the tests
 
+Use the local configuration (`DJANGO_DEBUG=True`, `DJANGO_DB_ENGINE=sqlite`).
+This keeps HTTP requests and static URLs consistent with the existing tests.
+
 ```bash
+python manage.py check
+python manage.py test config
 python manage.py test
 node --test "guidance/tests/js/*.test.mjs"
 ```
@@ -255,6 +276,7 @@ with no packages to install, and also run inside the Django suite when Node is
 installed. The tests cover:
 
 - Models, constraints and seed migration reversibility
+- Database selection, production security configuration and static-file delivery
 - Central Time and daylight saving time (DST) validation
 - Registration, sign-in and sign-out, and permissions
 - The catalog, booking creation, My Bookings and booking ownership
@@ -266,7 +288,7 @@ installed. The tests cover:
 ## Project structure
 
 ```
-config/        settings (env-based), URL routing
+config/        settings (env-based), URL routing, configuration tests
 accounts/      custom User model, registration, sign in/out, permission decorators
 bookings/      Service and Booking models, Central Time helpers, booking form, views
 guidance/      weather guidance: Open-Meteo client, classification, facts, Ollama
@@ -276,7 +298,7 @@ templates/     base.html (shared layout) plus page templates and the weather pan
 static/css/    tokens.css (theme), base.css (elements), components.css (UI parts)
 static/js/     guidance-state.js (pure panel logic), guidance.js (panel DOM and fetch)
 static/img/    service illustrations (from Bochen Zhang's prototype) and the favicon
-docs/          product scope, roadmap, AI documentation, Task 10 protocol, A3 first
+docs/          deployment guide, product scope, roadmap, AI documentation, Task 10 protocol, A3 first
                draft, team update and handoff, implementation plans
 ```
 
@@ -339,11 +361,10 @@ replies are cached in memory for 30 minutes.
   fonts (Arial Narrow where available) because the prototype's embedded font has
   an unverified web licence; they look slightly different on machines without it.
 - There is no password reset. This matches wireframe S02.
-- The app currently runs locally; hosting and Postgres are planned for the
-  final submission. `python manage.py check --deploy` (run with `DJANGO_DEBUG=False`) reports four
-  production settings to configure before going live: W004 (HSTS,
-  `SECURE_HSTS_SECONDS`), W008 (`SECURE_SSL_REDIRECT`), W012
-  (`SESSION_COOKIE_SECURE`) and W016 (`CSRF_COOKIE_SECURE`). These are HTTPS
-  hosting requirements, not faults in the local development app, which runs
-  over plain HTTP. Set them once the HTTPS host is chosen; do not enable HSTS
-  before HTTPS works.
+- PostgreSQL selection, HTTPS settings, WhiteNoise and Waitress are prepared.
+  Hosting, a real PostgreSQL connection and migration, and HTTPS/proxy checks
+  remain deployment work. HSTS stays off until HTTPS is verified; subdomain
+  coverage and preload require separate deployment decisions. See the
+  [deployment guide](docs/deployment.md) for expected security warnings and
+  the remaining steps. This configuration does not transfer or modify the
+  existing local SQLite database.

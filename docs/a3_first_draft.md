@@ -197,7 +197,9 @@ team**. The detailed, living version is [`roadmap.md`](roadmap.md).
   Ollama the app runs and shows standard guidance.
 - **Secrets:** no `.env`, keys or passwords are tracked; `.env` is excluded by
   `.gitignore`, and the README tells developers never to commit or share it.
-- **Production settings:** `python manage.py check --deploy` lists four HTTPS
+- **Production settings (November 12 snapshot):** `python manage.py check --deploy` listed four HTTPS
   settings for a public deployment (W004 HSTS, W008 SSL redirect, W012 secure
   session cookie, W016 secure CSRF cookie). These are hosting requirements to
   set once the HTTPS host is chosen, not faults in the local development app.
+  The November 15 configuration work and current deployment requirements are
+  documented in the [deployment guide](deployment.md); live deployment is pending.
