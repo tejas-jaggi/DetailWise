@@ -10,6 +10,29 @@ const G = require("../../../static/js/guidance-state.js");
 
 const K1 = G.createGuidanceState().inputKey("1", "2026-11-12", "10:00");
 
+test("429 explanation response explains the wait without automatic retry", () => {
+  const view = G.interpretResponse("explain", {
+    status: 429, json: {status: "rate_limited", retry_after: 42},
+  });
+  assert.equal(view.state, "rate_limited");
+  assert.equal(view.retry, false);
+  assert.match(view.message, /42 seconds/);
+  assert.match(view.message, /still save your booking/);
+});
+
+test("429 malformed payload uses safe fixed text", () => {
+  for (const json of [null, {}, {retry_after: -1}, {retry_after: "<script>"}, {retry_after: Infinity}]) {
+    const view = G.interpretResponse("explain", {status: 429, json});
+    assert.equal(view.message, G.MESSAGES.rateLimited);
+    assert.equal(view.retry, false);
+  }
+});
+
+test("rate limiting does not change forecast response handling", () => {
+  const view = G.interpretResponse("forecast", {status: 429, json: {retry_after: 42}});
+  assert.notEqual(view.state, "rate_limited");
+});
+
 function readyState(key = K1) {
   const state = G.createGuidanceState();
   state.inputsChanged(key);

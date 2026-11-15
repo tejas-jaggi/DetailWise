@@ -113,6 +113,8 @@ python -c "from django.core.management.utils import get_random_secret_key; print
 | `OLLAMA_BASE_URL` | `http://127.0.0.1:11434` | Optional. Where **the Django server** reaches Ollama. |
 | `OLLAMA_MODEL` | `llama3` | Optional. Model name as Ollama knows it. |
 | `GUIDANCE_LLM_TIMEOUT` | `45` | Optional. Seconds to wait for the model (whole number, 1 or more). |
+| `GUIDANCE_EXPLAIN_LIMIT` | `5` | Maximum valid explanation requests per authenticated customer per rolling window (positive integer). |
+| `GUIDANCE_EXPLAIN_WINDOW_SECONDS` | `600` | Rolling-window length in seconds (positive integer). |
 
 `.env` is listed in `.gitignore`. **Never commit it or share it** (for example
 in a ZIP of the project, a screenshot or a chat). If it is ever shared,
@@ -169,6 +171,60 @@ Then open these pages:
 4. The panel shows **Conditions**, **For your service**, **Forecast confidence**
    and **Recommendation**, labelled **AI explanation** or **Standard guidance**.
 5. **Save booking** works the same whether or not you use the panel.
+
+### Explanation request limits
+
+`POST /guidance/explain/` permits **5 valid requests per customer per rolling
+10-minute window** by default. Configuration uses the two environment variables
+above, exposed in Django as `GUIDANCE_RATE_LIMIT` (`REQUESTS`, `WINDOW_SECONDS`).
+Authentication, customer permissions, CSRF and form validation run before quota
+admission. Limits use the signed-in Django user ID, never an IP or submitted ID.
+Invalid requests do not count. All admitted requests count, including cache hits,
+unavailable forecasts, model failures and disconnected clients. Denied requests
+do not extend the window. Forecast requests and booking saves are unaffected.
+
+When the quota is full, the endpoint returns HTTP **429**, a `Retry-After` header
+in whole seconds (rounded up), and JSON with `status: "rate_limited"`, a safe
+`message` and numeric `retry_after`. The panel displays the wait and leaves
+booking controls usable. It does not automatically retry or start another model
+request; the customer can manually request an explanation later.
+
+**Apply the new migration before using this branch:**
+
+```bash
+python manage.py migrate
+```
+
+The implementation adds `guidance.ExplanationQuota`, one row per requesting
+customer, containing only admission timestamps. No booking or model output is
+stored there. Expired timestamps are pruned on the next admitted request; the
+small last-used history persists while idle and is removed when the user is
+deleted. Existing quota history survives application restarts and cache clears.
+
+**Concurrency and deployment:** admission runs inside a short transaction on
+the `default` primary database. An UPDATE acquires a write lock before any
+history is read: a database write lock on SQLite, a row lock on PostgreSQL.
+The window uses database statement time after acquiring that lock, avoiding
+clock differences between application instances. Unique user keys also protect
+simultaneous first requests. Model/network work runs after the transaction commits,
+including when `ATOMIC_REQUESTS` is enabled. Bounded jittered retries handle SQLite
+lock contention; storage errors return safe HTTP **503** without calling the model.
+
+No Redis or additional dependency is required. Multi-process and multi-instance
+deployment requires **all instances to share the same transactional primary
+database and policy settings**, preferably PostgreSQL with Django's default
+READ COMMITTED isolation. Reads are explicitly pinned to `default`, not replicas.
+Separate SQLite files per instance, read replicas for quota state, or per-process
+caches cannot enforce a shared quota. SQLite is suitable for local development
+but serializes writers and may return 503 under contention. Automated concurrency
+tests use independent SQLite connections; PostgreSQL deployment/load testing is
+still required before production. Do not clear quota rows during deployments.
+
+This is a per-user admission limit, not a global model queue: five simultaneous
+requests from one customer can still be admitted, and many different customers
+can collectively load the model. Staff-only CLI evaluation/live-check commands
+and direct service calls are outside this HTTP endpoint policy. Changing the
+window length cannot recover timestamps already pruned under an older policy.
 
 ### Turning on AI explanations (optional)
 
@@ -298,8 +354,9 @@ User (accounts.User) 1 ──< Booking >── 1 Service
   - `price_at_booking` is a copy of the service price taken when the booking is created. If the service price changes later, the booking's estimated value stays correct.
   - References such as `DW-0001` are generated from the primary key and not stored.
 
-The weather guidance stores nothing in the database. Forecasts and accepted AI
-replies are cached in memory for 30 minutes.
+Weather forecasts and AI output are not stored in the database. Forecasts and
+accepted AI replies are cached in memory for 30 minutes. Explanation admission
+timestamps are stored separately in `ExplanationQuota` for per-user rate limiting.
 
 ### Booking rules enforced on the server
 
@@ -330,8 +387,8 @@ replies are cached in memory for 30 minutes.
   after an 18.2 s first call that included loading the model. (Two planning
   probes before the app was built took 13–23 s.) These few runs are not a
   reliability rate or a performance guarantee. Per-user rate limiting of the
-  explanation endpoint
-  is planned before public deployment. The AI works wherever the Django server
+  explanation endpoint is implemented; see deployment requirements above.
+  The AI works wherever the Django server
   can reach a running model. Details:
   [docs/ai_plan.md](docs/ai_plan.md#14-known-limitations).
 - The visual design follows Bochen Zhang's team-approved prototype, applied through

@@ -164,3 +164,24 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 # Weather guidance (Open-Meteo forecast and optional local AI explanation)
 
 GUIDANCE = guidance_settings(os.environ)
+
+
+def guidance_rate_limit_settings(environ) -> dict:
+    """Positive integer limits; invalid deployment configuration fails startup."""
+    values = {}
+    for key, variable, default in (
+        ("REQUESTS", "GUIDANCE_EXPLAIN_LIMIT", "5"),
+        ("WINDOW_SECONDS", "GUIDANCE_EXPLAIN_WINDOW_SECONDS", "600"),
+    ):
+        raw = (environ.get(variable) or default).strip()
+        try:
+            value = int(raw)
+        except (TypeError, ValueError):
+            raise ImproperlyConfigured(f"{variable} must be a positive integer.") from None
+        if value < 1:
+            raise ImproperlyConfigured(f"{variable} must be a positive integer.")
+        values[key] = value
+    return values
+
+
+GUIDANCE_RATE_LIMIT = guidance_rate_limit_settings(os.environ)
