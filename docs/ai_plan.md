@@ -335,10 +335,11 @@ Hosting options for the final version (to be chosen before the final submission)
    (no customer identity) to a third party.
 
 Whichever option is chosen, the Django host needs HTTPS production settings.
-`python manage.py check --deploy` (with `DJANGO_DEBUG=False`) currently reports
-four: W004 (HSTS, `SECURE_HSTS_SECONDS`), W008 (`SECURE_SSL_REDIRECT`), W012
-(`SESSION_COOKIE_SECURE`) and W016 (`CSRF_COOKIE_SECURE`). They are requirements
-for a public HTTPS deployment, not faults in the local development app.
+The [deployment guide](deployment.md) now covers environment-based PostgreSQL,
+HTTPS redirects, secure cookies, static files and WSGI startup. HSTS is deferred
+until HTTPS is verified, and proxy trust must match the actual infrastructure.
+It also explains the remaining `check --deploy` warnings. The model-hosting
+requirements above are unchanged.
 
 ## 11. Limitations of rule-based validation
 
