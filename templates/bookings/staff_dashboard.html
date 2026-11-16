@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Staff dashboard{% endblock %}
+{% block content %}
+<section class="page-heading page-heading--split">
+  <div>
+    <p class="eyebrow">Staff workspace</p>
+    <h1>Booking dashboard</h1>
+    <p>Appointment activity for the Urbana shop. All dates and times are Central Time.</p>
+  </div>
+  {% if summary %}<a class="btn btn--primary" href="{% url 'bookings:staff_export' %}{% if filter_query %}?{{ filter_query }}{% endif %}">Export bookings CSV</a>{% endif %}
+</section>
+
+<section class="panel dashboard-filter" aria-labelledby="filter-heading">
+  <h2 id="filter-heading" class="section-title">Appointment date range</h2>
+  <p class="muted">Both dates are inclusive. Leave either date blank for an open range, or both blank for all bookings.</p>
+  {% if form.errors %}<div class="form-error" role="alert"><p>Correct the date range to view or export bookings.</p>{{ form.non_field_errors }}</div>{% endif %}
+  <form method="get" action="{% url 'bookings:staff_dashboard' %}" class="dashboard-filter__form" novalidate>
+    {% for field in form %}{% include "includes/form_field.html" %}{% endfor %}
+    <div class="form-actions">
+      <button type="submit" class="btn btn--primary">Apply dates</button>
+      <a class="btn btn--ghost" href="{% url 'bookings:staff_dashboard' %}">Reset</a>
+    </div>
+  </form>
+</section>
+
+{% if summary %}
+<dl class="dashboard-stats" aria-label="Booking statistics">
+  <div class="panel"><dt>Total bookings</dt><dd>{{ summary.total }}<small>Includes cancelled bookings</small></dd></div>
+  <div class="panel"><dt>Upcoming bookings</dt><dd>{{ summary.upcoming }}<small>Saved and not yet started</small></dd></div>
+  <div class="panel"><dt>Cancelled bookings</dt><dd>{{ summary.cancelled }}<small>Retained in booking history</small></dd></div>
+  <div class="panel"><dt>Estimated booking revenue</dt><dd>${{ summary.revenue|floatformat:"2" }}<small>Saved bookings only, past and upcoming</small></dd></div>
+</dl>
+<p class="scope-note">Estimated revenue uses each booking's saved price, excludes cancellations, and is not collected payment or confirmed shop capacity.</p>
+
+{% if summary.total %}
+<div class="dashboard-charts">
+  <section class="panel" aria-labelledby="trends-heading">
+    <h2 id="trends-heading" class="section-title">Booking trends</h2>
+    <p class="muted">Bookings by appointment date, including cancellations. Dates without bookings are omitted.</p>
+    <div id="booking-trends" class="dashboard-chart" aria-label="Bookings by appointment date"></div>
+    <p id="trends-status" class="muted" role="status">Chart data is available in the table below.</p>
+    <details>
+      <summary>View booking trend data</summary>
+      <div class="dashboard-table-wrap" tabindex="0" role="region" aria-label="Booking trend data">
+        <table class="dashboard-table">
+          <caption>Bookings by appointment date (Central Time)</caption>
+          <thead><tr><th scope="col">Date</th><th scope="col">Bookings</th></tr></thead>
+          <tbody>{% for row in charts.trends %}<tr><th scope="row">{{ row.date }}</th><td>{{ row.count }}</td></tr>{% endfor %}</tbody>
+        </table>
+      </div>
+    </details>
+  </section>
+  <section class="panel" aria-labelledby="popularity-heading">
+    <h2 id="popularity-heading" class="section-title">Service popularity</h2>
+    <p class="muted">Bookings per service, including cancellations and inactive services with booking history.</p>
+    <div id="service-popularity" class="dashboard-chart" aria-label="Bookings by service"></div>
+    <p id="popularity-status" class="muted" role="status">Chart data is available in the table below.</p>
+    <details>
+      <summary>View service popularity data</summary>
+      <div class="dashboard-table-wrap" tabindex="0" role="region" aria-label="Service popularity data">
+        <table class="dashboard-table">
+          <caption>Bookings by service</caption>
+          <thead><tr><th scope="col">Service</th><th scope="col">Bookings</th></tr></thead>
+          <tbody>{% for row in charts.popularity %}<tr><th scope="row">{{ row.service }}</th><td>{{ row.count }}</td></tr>{% endfor %}</tbody>
+        </table>
+      </div>
+    </details>
+  </section>
+</div>
+{{ charts|json_script:"dashboard-chart-data" }}
+<script defer src="https://cdn.jsdelivr.net/npm/vega@6.4.0/build/vega.min.js" crossorigin="anonymous"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/vega-lite@6.5.0/build/vega-lite.min.js" crossorigin="anonymous"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/vega-embed@7.3.0/build/vega-embed.min.js" crossorigin="anonymous"></script>
+<script defer src="{% static 'js/staff-dashboard.js' %}"></script>
+{% else %}
+<section class="panel empty-state"><h2>No bookings in this date range</h2><p>Change or reset the date range to see other appointments. The CSV export will contain column headers only.</p></section>
+{% endif %}
+{% endif %}
+{% endblock %}
