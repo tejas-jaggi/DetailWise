@@ -1,3 +1,5 @@
+import re
+from html import unescape
 from urllib.parse import quote
 
 from django.contrib.auth import get_user_model
@@ -8,6 +10,7 @@ from django.test import RequestFactory, TestCase
 from django.urls import reverse
 
 from accounts.permissions import customer_required, staff_required
+from bookings.models import Service
 
 User = get_user_model()
 PASSWORD = "detail-wise-Test-9"
@@ -81,6 +84,60 @@ class RegistrationTests(TestCase):
     def test_register_ignores_unsafe_next(self):
         response = self.post(next="https://evil.example/steal")
         self.assertRedirects(response, reverse("accounts:login"), fetch_redirect_response=False)
+
+
+class AuthenticationNavigationTests(TestCase):
+    booking_url = reverse("bookings:create") + "?service=full-detail"
+
+    def header_link(self, response, label):
+        header = response.content.decode().split("</header>", 1)[0]
+        match = re.search(r'<a class="nav-btn" href="([^"]+)"[^>]*>' + label + r'</a>', header)
+        self.assertIsNotNone(match, f"Missing header link: {label}")
+        return unescape(match.group(1))
+
+    def test_header_register_keeps_service_through_registration_and_login(self):
+        response = self.client.get(self.booking_url, follow=True)
+        register_url = self.header_link(response, "Register")
+        self.assertEqual(register_url, reverse("accounts:register") + "?next="
+                         + quote(self.booking_url, safe=""))
+        response = self.client.get(register_url)
+        self.assertEqual(response.context["selected_service"].slug, "full-detail")
+        response = self.client.post(register_url, {
+            "username": "jordan", "password1": PASSWORD, "password2": PASSWORD,
+            "next": response.context["next"],
+        }, follow=True)
+        self.assertEqual(response.context["next"], self.booking_url)
+        response = self.client.post(response.request["PATH_INFO"], {
+            "username": "jordan", "password": PASSWORD, "next": response.context["next"],
+        }, follow=True)
+        self.assertRedirects(response, self.booking_url)
+        self.assertEqual(response.context["form"].initial["service"],
+                         Service.objects.get(slug="full-detail").pk)
+
+    def test_header_sign_in_keeps_service_from_registration(self):
+        User.objects.create_user("casey", password=PASSWORD)
+        response = self.client.get(reverse("accounts:register"), {"next": self.booking_url})
+        login_url = self.header_link(response, "Sign In")
+        self.assertEqual(login_url, reverse("accounts:login") + "?next="
+                         + quote(self.booking_url, safe=""))
+        response = self.client.get(login_url)
+        self.assertEqual(response.context["selected_service"].slug, "full-detail")
+        response = self.client.post(login_url, {
+            "username": "casey", "password": PASSWORD, "next": response.context["next"],
+        }, follow=True)
+        self.assertRedirects(response, self.booking_url)
+        self.assertEqual(response.context["form"].initial["service"],
+                         Service.objects.get(slug="full-detail").pk)
+
+    def test_header_authentication_links_omit_absent_or_unsafe_next(self):
+        for page in ("accounts:login", "accounts:register"):
+            for next_url in ("", "https://evil.example/steal", "//evil.example/steal"):
+                with self.subTest(page=page, next=next_url):
+                    response = self.client.get(reverse(page), {"next": next_url})
+                    self.assertEqual(self.header_link(response, "Sign In"),
+                                     reverse("accounts:login"))
+                    self.assertEqual(self.header_link(response, "Register"),
+                                     reverse("accounts:register"))
 
 
 class LoginLogoutTests(TestCase):

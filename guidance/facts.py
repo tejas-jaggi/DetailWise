@@ -10,8 +10,9 @@
 - A daily low above the daily high makes both temperatures missing.
 - Displayed values are rounded half-up to whole numbers (precipitation keeps its
   inches), and the classes are computed from those displayed values.
-- Appointment temperature and wind use the H:00 stamp; appointment rain probability
-  uses the H+1:00 stamp, which covers the hour starting at the appointment.
+- Appointment temperature and wind use the H:00 stamp as hourly estimates;
+  appointment rain probability uses the H+1:00 stamp, which covers H:00 to H+1:00,
+  the hour containing an H:MM appointment. The appointment minutes are preserved.
 """
 
 import math

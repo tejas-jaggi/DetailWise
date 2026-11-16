@@ -76,9 +76,9 @@ MISSING_LABELS = {
     "precipitation_in": "precipitation amount",
     "wind_max_mph": "wind speed",
     "gust_max_mph": "wind gust speed",
-    "appt_temp_f": "temperature at your appointment time",
-    "appt_wind_mph": "wind speed at your appointment time",
-    "appt_rain_chance_pct": "rain probability for the hour starting at your appointment",
+    "appt_temp_f": "hourly temperature estimate for your appointment",
+    "appt_wind_mph": "hourly wind speed estimate for your appointment",
+    "appt_rain_chance_pct": "rain probability for the hour containing your appointment",
 }
 
 # Proposed wording from the Task 2 review, awaiting team editorial review.

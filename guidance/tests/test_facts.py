@@ -388,10 +388,12 @@ class HourlyTests(FactsTestCase):
             "wind_speed_10m": {"2026-11-12T10:00": 13, "2026-11-12T11:00": 99},
             "precipitation_probability": {"2026-11-12T10:00": 99, "2026-11-12T11:00": 27},
         })
-        facts = self.build(payload, at=time(10, 30))
-        self.assertEqual(facts.time, time(10, 30))
-        self.assertEqual((facts.appt_temp_f, facts.appt_wind_mph, facts.appt_rain_chance_pct),
-                         (61, 13, 27))
+        for at in (time(10, 0), time(10, 30)):
+            with self.subTest(time=at):
+                facts = self.build(payload, at=at)
+                self.assertEqual(facts.time, at)
+                self.assertEqual((facts.appt_temp_f, facts.appt_wind_mph,
+                                  facts.appt_rain_chance_pct), (61, 13, 27))
 
     def test_appointment_rain_uses_following_stamp_at_2300(self):
         payload = forecast_payload(hourly={

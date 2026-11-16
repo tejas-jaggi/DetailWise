@@ -49,6 +49,7 @@ class PanelMarkupTests(PanelTestCase):
         panel = self.panel(html)
         self.assertIn("Weather for your date", panel)
         self.assertIn("Fixed shop: Urbana, IL · Central Time", panel)
+        self.assertIn("Forecast: Open-Meteo", panel)
         self.assertIn(f'data-forecast-url="{reverse("guidance:forecast")}"', panel)
         self.assertIn(f'data-explain-url="{reverse("guidance:explain")}"', panel)
         self.assertRegex(panel, r'id="weather-slot"[^>]*aria-live="polite"')
