@@ -1,5 +1,7 @@
 from django.contrib import messages
+from django.db import transaction
 from django.shortcuts import redirect, render
+from django.views.decorators.http import require_http_methods, require_POST
 
 from accounts.permissions import customer_required
 
@@ -68,3 +70,60 @@ def booking_detail(request, pk):
     if booking is None:
         return render(request, "bookings/booking_not_found.html", status=404)
     return render(request, "bookings/booking_detail.html", {"booking": booking})
+
+
+@customer_required
+@require_http_methods(["GET", "POST"])
+@transaction.atomic
+def booking_edit(request, pk):
+    """Edit an upcoming booking, scoped to its owner before binding input."""
+    booking = (
+        Booking.objects.select_for_update()
+        .filter(pk=pk, customer=request.user)
+        .first()
+    )
+    if booking is None:
+        return render(request, "bookings/booking_not_found.html", status=404)
+    if not booking.can_modify:
+        return render(request, "bookings/booking_unavailable.html", {"booking": booking}, status=403)
+
+    original_service_id = booking.service_id
+    # ModelForm validation mutates its instance, so retain the saved appointment.
+    original_date, original_time = booking.date, booking.time
+    form = BookingForm(request.POST if request.method == "POST" else None, instance=booking)
+    if request.method == "POST" and form.is_valid():
+        now = central_now()
+        if is_past_central(original_date, original_time, now=now):
+            return render(request, "bookings/booking_unavailable.html", {"booking": booking}, status=403)
+        if is_past_central(booking.date, booking.time, now=now):
+            form.add_error("time", "That time has already passed. Choose a later time (Central Time).")
+            return render(request, "bookings/booking_form.html", {"form": form, "booking": booking})
+        booking = form.save(commit=False)
+        if booking.service_id != original_service_id:
+            booking.price_at_booking = booking.service.price
+        booking.save(update_fields=["service", "date", "time", "price_at_booking", "updated_at"])
+        messages.success(request, f"Booking {booking.reference} updated.")
+        return redirect("bookings:detail", pk=booking.pk)
+
+    return render(request, "bookings/booking_form.html", {"form": form, "booking": booking})
+
+
+@customer_required
+@require_POST
+@transaction.atomic
+def booking_cancel(request, pk):
+    """Cancel, without deleting, an upcoming booking owned by this customer."""
+    booking = (
+        Booking.objects.select_for_update()
+        .filter(pk=pk, customer=request.user)
+        .first()
+    )
+    if booking is None:
+        return render(request, "bookings/booking_not_found.html", status=404)
+    if not booking.can_modify:
+        return render(request, "bookings/booking_unavailable.html", {"booking": booking}, status=403)
+
+    booking.status = Booking.Status.CANCELLED
+    booking.save(update_fields=["status", "updated_at"])
+    messages.success(request, f"Booking {booking.reference} cancelled.")
+    return redirect("bookings:my_bookings")

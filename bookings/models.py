@@ -111,3 +111,8 @@ class Booking(models.Model):
     def is_past(self) -> bool:
         """True once the appointment time has passed in Central Time."""
         return is_past_central(self.date, self.time)
+
+    @property
+    def can_modify(self) -> bool:
+        """Only saved appointments that have not started can be changed."""
+        return self.status == self.Status.SAVED and not self.is_past
