@@ -9,7 +9,15 @@ every AI reply is validated before a customer sees it.
 
 INFO 490 Project 2, Team 3: Yidan Huang, Bochen Zhang, Tianze Guo and Tejas Jaggi.
 
-> **Status (P2-A3 first draft, November 12, 2026):**
+**Current integration (November 16, 2026):** the team is using local Django,
+SQLite and optional local Ollama. Customer booking edits/cancellation, staff
+reporting/CSV and per-customer AI request limits are implemented. PostgreSQL
+and production settings remain available but inactive; cloud deployment is
+postponed. See the [local demo checklist](docs/local_demo.md) and
+[November 16 integration review](docs/integration_review.md) for validation
+results and remaining browser checks.
+
+> **Historical snapshot (P2-A3 first draft, November 12, 2026):**
 > - **Completed:** the customer booking workflow and the weather guidance
 >   feature, covered by 464 Django tests and 29 JavaScript tests (passing).
 >   These automated tests replace the AI model and the network with fixed replies.
@@ -25,7 +33,7 @@ INFO 490 Project 2, Team 3: Yidan Huang, Bochen Zhang, Tianze Guo and Tejas Jagg
 >   back. Validator acceptance is not accuracy; the independent human review
 >   and the prompt v1/v2 comparison are pending
 >   ([results](docs/task10_evaluation.md)).
-> - **Planned:** the human review and prompt comparison, a live AI explanation
+> - **Planned at that time:** the human review and prompt comparison, a live AI explanation
 >   in the browser, the staff dashboard and deployment, before the
 >   December 8 final submission. See
 >   [Scope notes and next steps](#scope-notes-and-next-steps).
@@ -46,10 +54,11 @@ INFO 490 Project 2, Team 3: Yidan Huang, Bochen Zhang, Tianze Guo and Tejas Jagg
 | AI explanation of the forecast (Llama 3 via Ollama, called by the Django server), validated, with standard-guidance fallback | Working in code and automated tests; one controlled live smoke test accepted (Nov 12); Task 10 prompt v1 baseline: 5 of 5 replies accepted by the validator (Nov 12); browser demonstration planned (see [live evidence](docs/ai_plan.md#13-live-experiment-evidence)) |
 | Customer-only JSON endpoints for the forecast and the explanation | Working |
 | Live-check command (`guidance_check`) | Working |
-| Edit and cancel a booking | Planned |
+| Edit and cancel a booking | Implemented for the customer's own saved, future bookings; cancellation retains the record |
 | Staff dashboard (Vega-Lite charts, CSV export) | Implemented; see staff reporting below |
+| Per-customer AI explanation request limit | Implemented: 5 valid requests per rolling 10-minute window by default; forecasts and booking saves remain available |
 | AI evaluation (accepted/fallback rates, failure analysis) | Prompt v1 baseline run Nov 12 on five fixed cases: validator acceptance 5 of 5, fallback 0 of 5, median latency 11.4 s. Human review pending ([review packet](docs/task10_v1_review_packet.md)); prompt v2 proposed, not implemented ([docs/task10_evaluation.md](docs/task10_evaluation.md)) |
-| Deployment | PostgreSQL, HTTPS settings, static files and WSGI startup prepared; hosting and live PostgreSQL/HTTPS verification pending ([deployment guide](docs/deployment.md)) |
+| Runtime and deployment | Local Django + SQLite + optional local Ollama. Cloud deployment postponed; PostgreSQL and production configuration retained but inactive ([deployment guide](docs/deployment.md)) |
 
 The workflow is: **Service Catalog → Sign In/Register → Create Booking (with
 optional weather guidance) → Database Save → My Bookings**.
@@ -167,7 +176,22 @@ Then open these pages:
 - <http://127.0.0.1:8000/accounts/register/> to register
 - <http://127.0.0.1:8000/bookings/new/> to book (sign-in required)
 - <http://127.0.0.1:8000/bookings/> for My Bookings (sign-in required)
+- <http://127.0.0.1:8000/staff/> for reporting and CSV export (staff only)
 - <http://127.0.0.1:8000/admin/> for the Django admin (staff only)
+
+Use the [local demo checklist](docs/local_demo.md) to walk through customer,
+weather, staff and request-limit behavior.
+
+### Edit or cancel a booking
+
+Open one of your upcoming bookings from **My Bookings**, then choose
+**Edit booking** or **Cancel booking**. Only saved appointments that have not
+started can be changed. Editing the date or time keeps the stored price;
+changing the service uses that service's current listed price. The booking
+reference stays the same. Cancellation is a CSRF-protected POST that changes
+the status to Cancelled and keeps the record in history; it does not delete it.
+Other customers' bookings remain inaccessible, and past or cancelled bookings
+cannot be edited or cancelled again.
 
 ## Staff reporting
 
@@ -279,7 +303,7 @@ still required before production. Do not clear quota rows during deployments.
 
 This is a per-user admission limit, not a global model queue: five simultaneous
 requests from one customer can still be admitted, and many different customers
-can collectively load the model. Staff-only CLI evaluation/live-check commands
+can collectively load the model. Operator CLI evaluation/live-check commands
 and direct service calls are outside this HTTP endpoint policy. Changing the
 window length cannot recover timestamps already pruned under an older policy.
 
@@ -315,9 +339,12 @@ It calls Open-Meteo and, if it is already running, the configured Ollama model.
 It never downloads a model and never writes to the database.
 
 ```bash
-python manage.py guidance_check --service exterior-wash --date 2026-11-14 --time 10:00
-python manage.py guidance_check --service interior-clean --date 2026-11-20 --runs 3
+python manage.py guidance_check --service exterior-wash --date YYYY-MM-DD --time 10:00
+python manage.py guidance_check --service interior-clean --date YYYY-MM-DD --runs 3
 ```
+
+Replace `YYYY-MM-DD` with a future appointment date within the next 15 days
+(Central Time); the forecast and past-time rules apply to this command too.
 
 It prints the forecast fetch time and cache hit or miss, the facts and classes,
 whether Ollama is reachable and the model installed, and for each run the
@@ -376,7 +403,9 @@ installed. The tests cover:
 - Database selection, production security configuration and static-file delivery
 - Central Time and daylight saving time (DST) validation
 - Registration, sign-in and sign-out, and permissions
-- The catalog, booking creation, My Bookings and booking ownership
+- The catalog, booking creation/editing/cancellation, My Bookings and ownership
+- Staff statistics, chart data, date filters, permissions and CSV export
+- Per-customer explanation quotas, expiry, storage failures and concurrent admission
 - The forecast client, classification rules, exact-date facts and DST hours
 - The AI client's request and every failure type, the validator, the fallback,
   the service layer and its cache, the JSON endpoints, the booking-page panel,
@@ -438,8 +467,9 @@ timestamps are stored separately in `ExplanationQuota` for per-user rate limitin
 
 ## Scope notes and next steps
 
-- Booking edit/cancel remains planned on this branch. Staff reporting and CSV
-  export are implemented; staff manage bookings in the Django admin.
+- Booking edit/cancel, staff reporting and CSV export are implemented. The
+  [local demo checklist](docs/local_demo.md) covers their integrated workflow;
+  staff can also manage records in the Django admin.
 - **AI:** the validator is rule-based, so it catches known kinds of error but
   cannot prove that an accepted reply is correct. Running the model needs
   about 6 GB of free memory. Measured so far, all on one laptop: the first live
@@ -458,9 +488,11 @@ timestamps are stored separately in `ExplanationQuota` for per-user rate limitin
   fonts (Arial Narrow where available) because the prototype's embedded font has
   an unverified web licence; they look slightly different on machines without it.
 - There is no password reset. This matches wireframe S02.
-- PostgreSQL selection, HTTPS settings, WhiteNoise and Waitress are prepared.
-  Hosting, a real PostgreSQL connection and migration, and HTTPS/proxy checks
-  remain deployment work. HSTS stays off until HTTPS is verified; subdomain
+- The selected runtime is local Django with SQLite and optional local Ollama.
+  Cloud deployment is postponed. PostgreSQL selection, HTTPS settings,
+  WhiteNoise and Waitress are retained for future deployment, but PostgreSQL
+  is inactive and no live PostgreSQL/HTTPS deployment is established.
+  HSTS stays off until HTTPS is verified; subdomain
   coverage and preload require separate deployment decisions. See the
   [deployment guide](docs/deployment.md) for expected security warnings and
   the remaining steps. This configuration does not transfer or modify the

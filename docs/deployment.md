@@ -1,5 +1,10 @@
 # Production configuration
 
+**Current team decision (November 16, 2026):** local Django with SQLite and
+optional local Ollama. Cloud deployment is postponed, and PostgreSQL support
+is retained but inactive. This guide is for future production work; the
+[local demo checklist](local_demo.md) describes the selected runtime.
+
 DetailWise supports Django 5.2 and Python 3.13 with PostgreSQL, WhiteNoise and
 Waitress. SQLite remains the default, and the local `runserver` workflow is
 unchanged when `DJANGO_DEBUG=True`. These changes prepare the application;
@@ -284,5 +289,7 @@ collect static files, configure HTTPS and proxy trust, establish backups and
 monitoring, and test the actual browser flows. PostgreSQL connection/migration
 and real HTTPS infrastructure are not verified by the automated configuration
 suite. The existing AI deployment limitations also remain: model reachability,
-per-user rate limiting, capacity planning and process-local caching are covered
-in [the AI plan](ai_plan.md#14-known-limitations) and are outside this change.
+capacity planning and process-local caching are covered in
+[the AI plan](ai_plan.md#14-known-limitations). Per-user admission limits are
+now implemented; all application instances must share the primary quota
+database and policy settings, and PostgreSQL/load verification is still pending.

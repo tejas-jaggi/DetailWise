@@ -164,6 +164,6 @@ class NodeTests(TestCase):
         tests = Path(settings.BASE_DIR) / "guidance" / "tests" / "js"
         result = subprocess.run(
             [node, "--test", str(tests / "guidance_state.test.mjs")],
-            capture_output=True, text=True, timeout=120, cwd=settings.BASE_DIR,
+            capture_output=True, text=True, encoding="utf-8", timeout=120, cwd=settings.BASE_DIR,
         )
         self.assertEqual(result.returncode, 0, result.stdout[-3000:] + result.stderr[-2000:])

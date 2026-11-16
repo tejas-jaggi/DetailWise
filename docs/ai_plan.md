@@ -1,7 +1,8 @@
 # DetailWise AI: Weather Guidance
 
 *INFO 490 Project 2, Team 3. This is the project's AI documentation (the
-assignment's `README_AI.md` requirement). Last updated November 12, 2026.*
+assignment's `README_AI.md` requirement). Integration status updated November
+16, 2026; historical experiment dates and results are preserved.*
 
 This document states what is **implemented and tested**, what was **measured
 live**, and what is **planned next**. Mocked tests are never presented as real
@@ -52,6 +53,7 @@ without it.
 | Fallback | `guidance/fallback.py` | Deterministic sections; Python's recommendation always |
 | Orchestrate | `guidance/service.py` | Ties the stages together; caches accepted replies |
 | Serve | `guidance/views.py`, `forms.py` | Two customer-only JSON endpoints |
+| Limit | `guidance/rate_limit.py`, `models.py` | Database-backed per-customer explanation quota; HTTP 429 when exhausted |
 | Show | `templates/guidance/_weather_panel.html`, `static/js/guidance*.js` | Booking-page panel |
 | Check | `guidance/management/commands/guidance_check.py` | Live check of the whole pipeline |
 | Evaluate | `guidance/evaluation.py`, `guidance/management/commands/guidance_evaluate.py` | Task 10 fixed-facts runner (dry run by default; prompt v1 baseline run Nov 12) |
@@ -67,8 +69,11 @@ without it.
   The independent human review is pending; two failure analyses are drafted
   and prompt v2 is proposed (not implemented); the v1/v2 comparison is
   planned.
-- **Deployment** with a model reachable from the hosted app (section 10).
-- **Rate limiting** of the explanation endpoint (section 14).
+
+The selected runtime is now local Django + SQLite + optional local Ollama.
+Cloud deployment is postponed; production/PostgreSQL configuration remains
+available but inactive (section 10). Per-customer explanation rate limiting is
+implemented; the remaining throughput limits are described in section 14.
 
 Further ideas beyond the final submission are listed in section 15.
 
@@ -80,6 +85,8 @@ Customer's browser (booking page)
   │  POST /guidance/explain/   service, date, time      (Explain button, CSRF)
   ▼
 Django view: signed-in customer only; validates the three fields
+  ▼
+Explanation quota: reserve admission in the database (429 if exhausted)
   ▼
 service.get_explanation()
   ├─ weather.fetch_forecast()      Open-Meteo, cached 30 min
@@ -127,6 +134,8 @@ Configuration (all optional; defaults shown), set in `.env`:
 | `OLLAMA_BASE_URL` | `http://127.0.0.1:11434` | Where **Django** reaches Ollama |
 | `OLLAMA_MODEL` | `llama3` | Model name as Ollama knows it |
 | `GUIDANCE_LLM_TIMEOUT` | `45` | Seconds Django waits for the model |
+| `GUIDANCE_EXPLAIN_LIMIT` | `5` | Valid explanation requests admitted per customer per window |
+| `GUIDANCE_EXPLAIN_WINDOW_SECONDS` | `600` | Rolling quota window in seconds |
 
 **Why this model and architecture:**
 
@@ -309,6 +318,10 @@ The Recommendation is **never** a model field. A reply containing an extra field
 
 ## 10. Where the model must run (deployment)
 
+**Current decision (November 16):** run Django and SQLite locally, with local
+Ollama optional. Cloud deployment is postponed. The hosting options below
+remain future alternatives, not the selected demo setup.
+
 The AI call is **server-side**. The browser talks only to Django; **Django**
 calls Ollama at `OLLAMA_BASE_URL`. `127.0.0.1` therefore means the machine (or
 container) running Django, never the customer's computer. Customers never need
@@ -322,7 +335,7 @@ Ollama.
 | Django on a server that also runs Ollama (or can reach a private Ollama) | Yes, for every customer |
 | Ollama unavailable anywhere | Standard guidance from Python; bookings unaffected |
 
-Hosting options for the final version (to be chosen before the final submission):
+Possible hosting options if cloud deployment is revisited:
 
 1. **One VM running Django and Ollama** (needs about 6 GB free RAM for the 8B
    model; a GPU makes it much faster). Simplest; the model port stays on
@@ -432,15 +445,15 @@ case B only and is not implemented. Details:
 3. **Throughput:** Ollama answers one request at a time by default, so
    simultaneous customers queue. Each explanation holds a synchronous Django
    worker for up to 45 s.
-4. **Rate limiting (planned):** a signed-in customer can currently trigger many model calls. Each
-   new service, date or time is a new call, and so is any repeat whose earlier
-   reply was rejected or failed (only accepted replies are cached). Recommended
-   before public deployment:
-   - a per-customer limit in Django using the existing cache (for example one
-     explanation in progress and at most 10 per 10 minutes per user), with no
-     new dependency;
-   - a request limit at the reverse proxy (for example nginx `limit_req`);
-   - at larger scale, a job queue so web workers are not held by the model.
+4. **Rate limiting (implemented, with throughput limits):** valid explanation
+   requests are limited to 5 per customer per rolling 10-minute window by
+   default. Admission history is stored in `ExplanationQuota` in the primary
+   database, and includes cache hits and failures. Exhaustion returns HTTP 429
+   with `Retry-After`; forecasts and booking saves remain available. This is
+   not a global queue or a one-request-at-a-time rule: simultaneous requests
+   across customers can still load the model. See the
+   [configuration and concurrency requirements](../README.md#explanation-request-limits).
+   Reverse-proxy limits and a job queue remain future scaling options.
 5. **Cache scope:** the cache is per Django process (`LocMemCache`); separate
    processes do not share it.
 6. **Deployment:** the AI works only where Django can reach a running model
