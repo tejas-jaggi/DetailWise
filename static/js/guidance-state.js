@@ -34,6 +34,7 @@
     authRequired: "Your session has ended. Sign in again to see the forecast.",
     sessionExpired: "Your session may have expired. Reload the page.",
     invalid: "Check the service, date and time.",
+    rateLimited: "AI explanation request limit reached. Please try again later. You can still save your booking.",
   };
 
   var SOURCE_LABELS = { ai: "AI explanation", fallback: "Standard guidance" };
@@ -144,6 +145,15 @@
 
     if (response.status === 401) return { state: "auth_required", message: MESSAGES.authRequired };
     if (response.status === 403) return { state: "session_expired", message: MESSAGES.sessionExpired };
+    if (kind === "explain" && response.status === 429) {
+      var seconds = isObject ? body.retry_after : null;
+      var message = MESSAGES.rateLimited;
+      if (Number.isSafeInteger(seconds) && seconds > 0) {
+        message = "AI explanation request limit reached. Try again in " + seconds +
+          " seconds. You can still save your booking.";
+      }
+      return { state: "rate_limited", message: message, retry: false };
+    }
     if (response.status === 400 && isObject && body.status === "invalid") {
       return { state: "invalid", message: firstError(body.errors) };
     }

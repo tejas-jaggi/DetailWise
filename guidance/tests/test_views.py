@@ -316,7 +316,7 @@ class OutcomeTests(GuidanceViewTestCase):
 
 
 class IsolationTests(GuidanceViewTestCase):
-    def test_no_database_writes(self):
+    def test_only_quota_history_is_written_not_bookings(self):
         before = Booking.objects.count()
         with mock.patch("guidance.weather.urlopen", side_effect=weather_ok), \
                 mock.patch("guidance.llm.urlopen", side_effect=URLError("down")), \
@@ -326,7 +326,8 @@ class IsolationTests(GuidanceViewTestCase):
             self.assertEqual(self.post_explain(service="abc").status_code, 400)
         writes = [q["sql"] for q in queries.captured_queries
                   if q["sql"].lstrip().upper().startswith(("INSERT", "UPDATE", "DELETE"))]
-        self.assertEqual(writes, [])
+        self.assertTrue(writes)
+        self.assertTrue(all('"guidance_explanationquota"' in sql for sql in writes))
         self.assertEqual(Booking.objects.count(), before)
 
     def test_booking_create_unchanged_by_guidance_failure(self):
