@@ -4,6 +4,12 @@
 Jaggi. Prepared November 12, 2026, for the first-draft deadline of November 16,
 2026.*
 
+This is the November 12 snapshot, including its then-planned features and
+measured results. Current integration adds booking editing/cancellation, staff
+reporting and explanation request limits; the team now uses a local SQLite
+demo with optional Ollama and has postponed cloud deployment. See the current
+[README](../README.md) and [local demo checklist](local_demo.md).
+
 Repository: <https://github.com/tejas-jaggi/DetailWise>
 
 Every result below was produced in this repository. Three kinds of evidence

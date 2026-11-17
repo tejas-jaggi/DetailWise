@@ -1,6 +1,6 @@
 # DetailWise: Development Roadmap
 
-*Updated November 12, 2026. Team 3: Yidan Huang, Bochen Zhang, Tianze Guo and
+*Integration status updated November 16, 2026. Team 3: Yidan Huang, Bochen Zhang, Tianze Guo and
 Tejas Jaggi.*
 
 **Confirmed course deadlines:** P2-A3 first draft, **November 16, 2026, 11:59 PM**;
@@ -11,16 +11,17 @@ Tejas Jaggi.**
 
 How to read these tables:
 
-- **Status** lists only what is implemented and verified in this repository.
-  Test counts come from `python manage.py test` on November 12 (464 tests, OK)
+- Historical test counts come from `python manage.py test` on November 12 (464 tests, OK)
   and `node --test "guidance/tests/js/*.test.mjs"` (29 tests, OK). These tests
   replace the network and the AI model with fixed replies.
+- The integration section below describes code currently present; it does not
+  turn historical test results into evidence for newer changes.
 - **Proposed** owners and dates have **not** been confirmed by the team. Each
   proposed contribution is technical and can be checked in the repository
   (code, tests or data work).
 - **Team to confirm** means nobody is assigned yet.
 
-## Completed
+## Historical completed work (through November 12)
 
 | Task | Status | Responsible member | Completed |
 |---|---|---|---|
@@ -35,6 +36,20 @@ How to read these tables:
 | **Design:** Bochen Zhang's approved prototype applied to every page | **Done.** 11 design-system tests; checked in a browser at 1280 px and 390 px with a simulated model | Tejas Jaggi (design by Bochen Zhang) | Nov 12 |
 | **Documentation:** README, AI documentation, product scope, roadmap, A3 first draft, Task 10 protocol, team handoff | **Done for the first draft** | Tejas Jaggi | Nov 12 |
 
+## Current local integration
+
+The selected runtime is **local Django + SQLite + optional local Ollama**.
+Cloud deployment is postponed. PostgreSQL support and production security
+configuration are retained but inactive; no live PostgreSQL deployment is
+claimed. Use the [local demo checklist](local_demo.md) to verify the workflow.
+
+| Feature present on `tianze/final-integration` | Current behavior |
+|---|---|
+| Booking editing and cancellation | Customers can change their own saved, future bookings; cancellation retains history. Tests are in `bookings/tests/test_management.py`. |
+| Staff reporting and CSV export | Inclusive appointment-date filters, statistics, Vega-Lite charts, table fallbacks and per-booking CSV. Aggregate JSON is embedded in the page. Tests are in `bookings/tests/test_staff_dashboard.py`. |
+| Explanation request limits | Database-backed per-customer rolling quota, default 5 valid requests per 10 minutes. Forecasts and booking saves remain available. Tests are in `guidance/tests/test_rate_limit.py`. |
+| Future production configuration | PostgreSQL selection, HTTPS settings, WhiteNoise and Waitress are documented in the [deployment guide](deployment.md); local SQLite remains active. |
+
 ## Remaining before December 8
 
 | Task | Current status | Responsible member | Expected completion |
@@ -42,18 +57,16 @@ How to read these tables:
 | **AI integration:** live AI explanation demonstrated in the browser on the booking page | Planned. The command-line smoke test passed; the first app call (Nov 12) had timed out after 45 s and fallen back. Each attempt needs about 6 GB of free memory | Tejas Jaggi | Team to confirm |
 | **Evaluation (Task 10):** human review of the v1 replies, two failure analyses, one measured prompt improvement (v2 on the same five cases) | Planned. v1 baseline done (above); review packet ready; two failure analyses drafted (cases B and C, preliminary); prompt v2 proposed for case B, not implemented; human review and v1/v2 comparison not yet done | *Proposed:* Tianze Guo runs and records the cases | Proposed: Dec 2 |
 | **AI integration:** model-selection comparison (local vs one hosted model on latency, cost, privacy) | Local Llama 3 8B chosen and documented in [`ai_plan.md`](ai_plan.md); hosted comparison planned | *Proposed:* Tianze Guo | Proposed: Nov 28 |
-| **Django core:** edit and cancel a booking (status change) with ownership and past-booking rules | Planned | Tejas Jaggi | Proposed: Nov 22 |
-| **APIs:** staff reporting and CSV export with a date-range filter | Implemented on `tianze/staff-dashboard`; aggregate JSON is embedded safely in the page, rather than exposed as a separate API. CSV exports individual booking records. | Branch implementation; review pending | Nov 14 implementation |
-| **APIs:** staff dashboard page with Vega-Lite charts | Implemented with statistics, inclusive appointment-date filters, responsive layout and accessible table fallbacks. Automated reporting tests pass; visual browser review pending. | Branch implementation; review pending | Nov 14 implementation |
 | **Testing:** review changes and add tests for new features | Ongoing | *Proposed:* Bochen Zhang | Ongoing |
-| **Deployment:** hosting, Postgres, production settings, secrets | Configuration prepared Nov 15: PostgreSQL selection, HTTPS settings, static files and WSGI startup ([deployment guide](deployment.md)). Hosting, live PostgreSQL connection/migration and HTTPS/proxy verification remain pending. The server also needs a reachable model ([`ai_plan.md` §10](ai_plan.md#10-where-the-model-must-run-deployment)) | Team to confirm | Proposed: Dec 4 |
+| **Deployment:** hosting, Postgres, production settings, secrets | Cloud deployment postponed by the current team decision. Configuration remains available for future use; actual PostgreSQL connection/migration and HTTPS/proxy verification remain unverified. | Team to revisit if needed | Postponed |
 | **Deployment:** cost, scalability (10,000 daily users), security and rate-limiting write-up | Limitations documented in [`ai_plan.md` §14](ai_plan.md#14-known-limitations); write-up planned | *Proposed:* Yidan Huang drafts the cost table from measured latency | Proposed: Dec 5 |
-| **Presentation:** mid-point video (4 minutes); outline in [`team_update.md`](team_update.md) | Planned | Team to confirm | Course deadline |
+| **Presentation:** mid-point video (4 minutes) | Planned | Team to confirm | Course deadline |
 | **Documentation:** 3-minute final demo video and final README | Planned | Team to confirm | By Dec 8 (course deadline) |
 
 ## Open decisions for the team
 
-1. **Hosting**, and where the model runs for the deployed version.
+1. **Future hosting**, only if the team revisits its local-demo decision; the
+   active setup uses SQLite and optional Ollama on the local machine.
 2. **Confirming or changing** the proposed owners and dates above.
 
 *Decided:* the visual design is Bochen Zhang's prototype, approved by the team

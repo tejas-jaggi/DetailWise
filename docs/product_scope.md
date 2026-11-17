@@ -1,15 +1,21 @@
-# DetailWise: Updated Product Scope (P2-A3 first draft)
+# DetailWise: Updated Product Scope
 
 *INFO 490 Project 2, Team 3. Draft prepared November 8, 2026; feature status
-updated November 12, 2026.*
+updated for local integration November 16, 2026.*
 
 ## Product idea
 
 DetailWise is a booking web application for a single car detailing shop in
 Urbana, IL. Customers browse three services, create an account and save a
 booking for a date and time. Before saving, they can see weather-informed
-guidance about whether the forecast suits the service. Shop staff will see
-booking trends and export booking data (planned).
+guidance about whether the forecast suits the service. Shop staff can see
+booking trends and export booking data.
+
+The current team decision is local Django with SQLite and optional local
+Ollama. Cloud deployment is postponed; PostgreSQL support and production
+settings are retained but inactive. The [local demo checklist](local_demo.md)
+covers the integrated workflow. Historical experiments remain recorded in
+the AI documentation and the dated first-draft report.
 
 ## Problem
 
@@ -34,7 +40,9 @@ The four features proposed in P2-A2 are grouped into three:
      - Booking creation, validated on the server in Central Time.
      - A private My Bookings list and booking detail page.
      - Ownership checks, so customers only ever see their own bookings.
-   - Next: edit and cancel a booking (as a status change, not a deletion).
+     - Edit and cancel the customer's own saved, future bookings. Cancellation
+       changes the status and retains the record; date/time edits keep the saved
+       price, while a service change uses the newly selected service's price.
 2. **Weather-informed AI guidance.** *(Implemented and covered by automated tests; Task 10 prompt v1 baseline run on November 12; human review and prompt comparison planned.)*
    - The booking page shows the Open-Meteo forecast for the chosen date and hour.
    - Python turns the forecast into structured facts and classes (rain, wind,
@@ -45,10 +53,14 @@ The four features proposed in P2-A2 are grouped into three:
    - Every reply is validated against the facts; anything rejected, slow or
      unavailable falls back to standard guidance written by Python.
    - The guidance never changes or blocks a booking. See `docs/ai_plan.md`.
-3. **Staff analytics and export.** *(Planned.)*
+   - Valid explanation requests are limited per customer: 5 per rolling
+     10-minute window by default. Forecasts and booking saves remain available.
+3. **Staff analytics and export.** *(Implemented.)*
    - A staff-only dashboard with a date-range filter.
-   - Totals and Vega-Lite charts by date and by service, fed by internal JSON endpoints.
-   - CSV export (`date, service, saved_booking_count, estimated_value`).
+   - Totals and Vega-Lite charts by appointment date and by service, using
+     aggregate JSON embedded in the page, with table fallbacks.
+   - Per-booking CSV export: reference, service, date, time, status and estimated
+     price; the same inclusive date filters apply, and no customer data is exported.
 
 ## Changes from P2-A2
 
